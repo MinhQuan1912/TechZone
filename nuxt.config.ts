@@ -50,7 +50,7 @@ export default defineNuxtConfig({
   ],
   runtimeConfig: {
     public: {
-      apiBase: "http://localhost:3001/api",
+      apiBase: "https://proofing-manhood-quirk.ngrok-free.dev/api",
       googleClientId:
         "423973623141-prr5r9sj0o7nv2ocfms16faje98bs4lr.apps.googleusercontent.com",
     },
