@@ -10,6 +10,7 @@ export const useApi = () => {
       body?: any;
       query?: Record<string, any>;
       server?: boolean;
+      headers?: Record<string, string>;
     } = {},
   ): Promise<T> {
     const doFetch = async (): Promise<T> => {
@@ -19,6 +20,10 @@ export const useApi = () => {
         body: options.body,
         params: options.query,
         credentials: "include",
+        headers: {
+          "ngrok-skip-browser-warning": "true",
+          ...options.headers,
+        },
       });
       return res.data;
     };
@@ -57,14 +62,25 @@ export const useApi = () => {
 
 export const useApiFetch = <T>(
   url: string,
-  options?: Parameters<typeof useFetch>[1] & { query?: Record<string, any> },
+  options: Parameters<typeof useFetch>[1] & {
+    query?: Record<string, any>;
+  } = {},
 ) => {
   const config = useRuntimeConfig();
+
+  const { query, headers, ...restOptions } = options as any;
+
   return useFetch<T, Error, any, any, any, { success: boolean; data: T }>(url, {
     baseURL: config.public.apiBase as string,
     credentials: "include",
-    params: options?.query,
+    params: query,
+
+    headers: {
+      "ngrok-skip-browser-warning": "true",
+      ...(headers || {}),
+    },
+
     transform: (res) => res.data as T,
-    ...(options as any),
+    ...restOptions,
   });
 };

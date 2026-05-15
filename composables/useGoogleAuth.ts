@@ -46,6 +46,9 @@ export const useGoogleAuth = () => {
         method: "POST",
         body: { credential: response.credential },
         credentials: "include",
+        headers: {
+          "ngrok-skip-browser-warning": "true",
+        },
       });
 
       authStore.user = res.data.user;

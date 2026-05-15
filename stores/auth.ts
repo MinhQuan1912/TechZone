@@ -16,6 +16,9 @@ export const useAuthStore = defineStore("auth", () => {
       method: "POST",
       body: { emailOrUsername, password },
       credentials: "include",
+      headers: {
+        "ngrok-skip-browser-warning": "true",
+      },
     });
     user.value = res.data.user;
     return res.data;
@@ -31,6 +34,9 @@ export const useAuthStore = defineStore("auth", () => {
       method: "POST",
       body: { email, name, password, username },
       credentials: "include",
+      headers: {
+        "ngrok-skip-browser-warning": "true",
+      },
     });
     user.value = res.data.user;
     return res.data;
@@ -40,6 +46,9 @@ export const useAuthStore = defineStore("auth", () => {
       baseURL,
       method: "POST",
       credentials: "include",
+      headers: {
+        "ngrok-skip-browser-warning": "true",
+      },
     });
   }
   async function updateProfile(data: {
@@ -52,6 +61,9 @@ export const useAuthStore = defineStore("auth", () => {
       method: "PATCH",
       body: data,
       credentials: "include",
+      headers: {
+        "ngrok-skip-browser-warning": "true",
+      },
     });
     user.value = { ...user.value, ...res.data };
     return res.data;
@@ -62,6 +74,9 @@ export const useAuthStore = defineStore("auth", () => {
         baseURL,
         method: "POST",
         credentials: "include",
+        headers: {
+          "ngrok-skip-browser-warning": "true",
+        },
       });
     } catch {
     }

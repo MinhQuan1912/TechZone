@@ -172,6 +172,9 @@ async function fetchSuggestions() {
       baseURL,
       credentials: 'include',
       query: { search: searchQuery.value, limit: 8 },
+      headers: {
+        "ngrok-skip-browser-warning": "true",
+      },
     })
     suggestions.value = res.data.products || []
   } catch {
