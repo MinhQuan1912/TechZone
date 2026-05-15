@@ -3,7 +3,7 @@
       <div class="flex justify-center">
          <div class="py-15 lg:py-35 flex flex-wrap gap-5 lg:gap-10 xl:gap-22 w-full  m:w-max">
             <template v-for="item in service" :key="item.content">
-               <div class="w-full md:w-[calc(50%-10px)] m:w-65.5 flex m:flex-col justify-center items-center gap-6">
+               <div class="w-full md:w-[calc(50%-10px)] m:w-76 flex m:flex-col justify-center items-center gap-5">
                   <div
                      class="w-20 h-20 rounded-full border-11 border-primary-01/30 bg-black bg-clip-content flex justify-center items-center text-text">
                      <component :is="item.icon" />
@@ -22,14 +22,26 @@
 
 <script setup lang="ts">
 import {
-   LazyIconsAboutUsCustomerService,
-   LazyIconsAboutUsDelivery,
-   LazyIconsAboutUsSecure,
+   IconsAboutUsCustomerService,
+   IconsAboutUsDelivery,
+   IconsAboutUsSecure,
 } from '#components';
-const service = ref([
-   { label: 'FREE AND FAST DELIVERY', content: 'Free delivery for all orders over $140', icon: LazyIconsAboutUsDelivery },
-   { label: '24/7 CUSTOMER SERVICE', content: 'Friendly 24/7 customer support', icon: LazyIconsAboutUsCustomerService },
-   { label: 'MONEY BACK GUARANTEE', content: 'We return money within 30 days', icon: LazyIconsAboutUsSecure },
+const service = shallowRef([
+   {
+      label: 'GIAO HÀNG NHANH & MIỄN PHÍ',
+      content: 'Miễn phí giao hàng trên toàn quốc',
+      icon: IconsAboutUsDelivery
+   },
+   {
+      label: 'HỖ TRỢ KHÁCH HÀNG 24/7',
+      content: 'Đội ngũ hỗ trợ thân thiện, phục vụ 24/7',
+      icon: IconsAboutUsCustomerService
+   },
+   {
+      label: 'HOÀN TIỀN ĐẢM BẢO',
+      content: 'Hoàn tiền trong vòng 30 ngày',
+      icon: IconsAboutUsSecure
+   },
 ])
 </script>
 

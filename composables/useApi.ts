@@ -1,188 +1,70 @@
 export const useApi = () => {
   const config = useRuntimeConfig();
+  const baseURL = config.public.apiBase as string;
+  const toast = useToast();
   const authStore = useAuthStore();
-
-  const getHeaders = () => {
-    const headers: any = {};
-    if (authStore.token) {
-      headers["Authorization"] = `Bearer ${authStore.token}`;
-    }
-    return headers;
-  };
-
-  // Products
-  const getAllProducts = async () => {
-    try {
-      const data = await $fetch(`${config.public.apiBase}/products`);
-      return { data, error: null };
-    } catch (error: any) {
-      return { data: null, error: error.message };
-    }
-  };
-
-  const getProductById = async (id: number) => {
-    try {
-      const data = await $fetch(`${config.public.apiBase}/products/${id}`);
-      return { data, error: null };
-    } catch (error: any) {
-      return { data: null, error: error.message };
-    }
-  };
-
-  const getProductsByCategory = async (categoryId: number) => {
-    try {
-      const data = await $fetch(
-        `${config.public.apiBase}/products/category/${categoryId}`
-      );
-      return { data, error: null };
-    } catch (error: any) {
-      return { data: null, error: error.message };
-    }
-  };
-
-  // Categories
-  const getAllCategories = async () => {
-    try {
-      const data = await $fetch(`${config.public.apiBase}/categories`);
-      return { data, error: null };
-    } catch (error: any) {
-      return { data: null, error: error.message };
-    }
-  };
-
-  // Cart
-  const getCart = async () => {
-    try {
-      const data = await $fetch(`${config.public.apiBase}/cart`, {
-        headers: getHeaders(),
+  async function api<T = any>(
+    url: string,
+    options: {
+      method?: string;
+      body?: any;
+      query?: Record<string, any>;
+      server?: boolean;
+    } = {},
+  ): Promise<T> {
+    const doFetch = async (): Promise<T> => {
+      const res = await $fetch<{ success: boolean; data: T }>(url, {
+        baseURL,
+        method: (options.method as any) || "GET",
+        body: options.body,
+        params: options.query,
+        credentials: "include",
       });
-      return { data, error: null };
-    } catch (error: any) {
-      return { data: null, error: error.message };
-    }
-  };
+      return res.data;
+    };
 
-  const addToCart = async (productId: number, quantity: number = 1) => {
     try {
-      const data = await $fetch(`${config.public.apiBase}/cart`, {
-        method: "POST",
-        headers: getHeaders(),
-        body: { productId, quantity },
-      });
-      return { data, error: null };
-    } catch (error: any) {
-      return { data: null, error: error.message };
-    }
-  };
-
-  const updateCartItem = async (cartItemId: number, quantity: number) => {
-    try {
-      const data = await $fetch(
-        `${config.public.apiBase}/cart/${cartItemId}?quantity=${quantity}`,
-        {
-          method: "PUT",
-          headers: getHeaders(),
+      return await doFetch();
+    } catch (err: any) {
+      if (err.status === 401) {
+        try {
+          await authStore.doRefresh();
+          return await doFetch();
+        } catch (refreshError) {
+          authStore.logout();
+          if (!options.server && import.meta.client) {
+            toast.add({
+              title: "Phiên đăng nhập hết hạn",
+              description: "Vui lòng đăng nhập lại",
+              color: "error",
+            });
+          }
+          throw refreshError;
         }
-      );
-      return { data, error: null };
-    } catch (error: any) {
-      return { data: null, error: error.message };
-    }
-  };
+      }
+      const msg = Array.isArray(err?.data?.message)
+        ? err.data.message.join(", ")
+        : err?.data?.message || "Đã xảy ra lỗi";
 
-  const removeFromCart = async (cartItemId: number) => {
-    try {
-      const data = await $fetch(`${config.public.apiBase}/cart/${cartItemId}`, {
-        method: "DELETE",
-        headers: getHeaders(),
-      });
-      return { data, error: null };
-    } catch (error: any) {
-      return { data: null, error: error.message };
+      if (!options.server && import.meta.client) {
+        toast.add({ title: "Lỗi", description: msg, color: "error" });
+      }
+      throw err;
     }
-  };
+  }
+  return { api };
+};
 
-  // Wishlist
-  const getWishlist = async () => {
-    try {
-      const data = await $fetch(`${config.public.apiBase}/wishlist`, {
-        headers: getHeaders(),
-      });
-      return { data, error: null };
-    } catch (error: any) {
-      return { data: null, error: error.message };
-    }
-  };
-
-  const addToWishlist = async (productId: number) => {
-    try {
-      const data = await $fetch(
-        `${config.public.apiBase}/wishlist/${productId}`,
-        {
-          method: "POST",
-          headers: getHeaders(),
-        }
-      );
-      return { data, error: null };
-    } catch (error: any) {
-      return { data: null, error: error.message };
-    }
-  };
-
-  const removeFromWishlist = async (productId: number) => {
-    try {
-      const data = await $fetch(
-        `${config.public.apiBase}/wishlist/${productId}`,
-        {
-          method: "DELETE",
-          headers: getHeaders(),
-        }
-      );
-      return { data, error: null };
-    } catch (error: any) {
-      return { data: null, error: error.message };
-    }
-  };
-
-  // Orders
-  
-  const createOrder = async (shippingAddress: string, phoneNumber: string) => {
-    try {
-      const data = await $fetch(`${config.public.apiBase}/orders`, {
-        method: "POST",
-        headers: getHeaders(),
-        body: { shippingAddress, phoneNumber },
-      });
-      return { data, error: null };
-    } catch (error: any) {
-      return { data: null, error: error.message };
-    }
-  };
-
-  const getMyOrders = async () => {
-    try {
-      const data = await $fetch(`${config.public.apiBase}/orders`, {
-        headers: getHeaders(),
-      });
-      return { data, error: null };
-    } catch (error: any) {
-      return { data: null, error: error.message };
-    }
-  };
-
-  return {
-    getAllProducts,
-    getProductById,
-    getProductsByCategory,
-    getAllCategories,
-    getCart,
-    addToCart,
-    updateCartItem,
-    removeFromCart,
-    getWishlist,
-    addToWishlist,
-    removeFromWishlist,
-    createOrder,
-    getMyOrders,
-  };
+export const useApiFetch = <T>(
+  url: string,
+  options?: Parameters<typeof useFetch>[1] & { query?: Record<string, any> },
+) => {
+  const config = useRuntimeConfig();
+  return useFetch<T, Error, any, any, any, { success: boolean; data: T }>(url, {
+    baseURL: config.public.apiBase as string,
+    credentials: "include",
+    params: options?.query,
+    transform: (res) => res.data as T,
+    ...(options as any),
+  });
 };

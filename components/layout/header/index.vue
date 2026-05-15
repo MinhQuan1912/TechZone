@@ -1,104 +1,108 @@
 <template>
   <div class="bg-white sticky top-0 z-5">
-    <div class="h-12 bg-black hidden sm:flex items-center fixed top-0 left-0 w-full z-50 
+    <div class="h-12 bg-secondary-02 hidden sm:flex items-center fixed top-0 left-0 w-full z-50 
            transition-all duration-500 ease"
       :class="scrollY > 50 ? 'opacity-0 -translate-y-full' : 'opacity-100 translate-y-0'">
-      <div class="px-3 m:px-0 m:container m:mx-auto w-full relative flex items-center">
-        <div class="absolute left-1/2 -translate-x-1/2 text-text items-center h-6">
-          <swiper :modules="[Autoplay, Navigation]" :loop="true" :direction="'vertical'" :slides-per-view="1"
-            :autoplay="{ delay: 3000, disableOnInteraction: false }" :space-between="0" class="h-6">
-            <swiper-slide v-for="item in marketing" :key="item">
-              <div class="flex items-center justify-center gap-2">
-                <p class="text-sm leading-5.25 whitespace-nowrap">
-                  {{ item }}
-                </p>
-                <nuxt-link to=""
-                  class="text-sm font-semibold leading-6 !underline hover:text-secondary-02 whitespace-nowrap">Shop
-                  Now</nuxt-link>
-              </div>
-            </swiper-slide>
-          </swiper>
-        </div>
-        <div class="ml-auto hidden md:flex items-center gap-1.25 text-text cursor-pointer group relative">
-          <p class="text-sm leading-5.25">{{ selectedLanguage }}</p>
-          <icons-arrow-1 />
-          <div
-            class="absolute top-full left-0 flex flex-col gap-3 bg-black rounded-sm p-3 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 ease">
-            <template v-for="item in language" :key="item">
-              <button class="whitespace-nowrap hover:text-secondary-02 text-left" @click="selectLanguage(item)">
-                {{ item }}
-              </button>
-            </template>
+      <div class="px-3 m:px-0 m:container m:mx-auto w-full h-8 relative flex items-center">
+        <div class="absolute inset-0 flex items-center overflow-hidden">
+          <div class="marketing-marquee">
+            <div v-for="(item, index) in [...marketing, ...marketing]" :key="index" class="marketing-item">
+              {{ item }}
+            </div>
           </div>
         </div>
       </div>
     </div>
     <div
       class="pt-4 md:pt-10 pb-4 border-b-[0.5px] border-black/30 bg-white w-full sticky top-0 transition-all duration-500 ease"
-      :class="scrollY > 50 ? ' !pt-4' : 'sm:!pt-22 '">
+      :class="scrollY > 50 ? 'pt-4!' : 'sm:pt-22!'">
       <div class="px-3 m:px-0 m:container m:mx-auto">
-        <div class="flex items-center justify-between h-9.5 gap-6 xs:gap-12 xl:gap-37">
-          <div class="flex items-center justify-between gap-2 h-6 w-full">
-            <p class="text-black text-2xl font-bold leading-6 ">Exclusive</p>
-            <div class="hidden md:flex items-center h-full">
-              <nuxt-link :to="menu.to" v-for="(menu, menuIndex) in menuHeader" :key="menuIndex"
-                class="whitespace-nowrap text-black px-3 lg:px-6 hover:text-secondary-02 transition-colors duration-300 ease">
-                <p class="cursor-pointer" :class="{ 'border-b': route.path === menu.to }">{{ menu.label }}</p>
-              </nuxt-link>
+        <div class="flex items-center justify-between h-9.5 gap-6 xs:gap-10">
+          <NuxtLink to="/">
+            <img src="/images/logo.png" alt="logo" class="object-cover h-16" />
+          </NuxtLink>
+          <div class="relative flex-1" ref="searchContainer">
+            <div class="flex justify-between items-center gap-4 bg-secondary pl-3 xs:pl-5 pr-3 h-9.5 rounded-sm">
+              <input v-model="searchQuery" type="text" autocomplete="off"
+                class="text-xs leading-4.5 opacity-50 text-black w-30 md:w-43 md:flex-1 placeholder-transparent md:placeholder-black focus:placeholder-transparent focus:outline-none bg-transparent"
+                placeholder="Bạn muốn mua gì hôm nay?" @input="onInput" @focus="onFocus" />
+              <icons-search class="w-4 h-4 lg:w-6 lg:h-6 cursor-pointer shrink-0" @click="doSearchNavigate" />
             </div>
+            <Transition enter-active-class="transition duration-150 ease-out"
+              enter-from-class="opacity-0 -translate-y-1" enter-to-class="opacity-100 translate-y-0"
+              leave-active-class="transition duration-100 ease-in" leave-from-class="opacity-100 translate-y-0"
+              leave-to-class="opacity-0 -translate-y-1">
+              <div v-if="dropdownOpen && searchQuery.length >= 1"
+                class="absolute z-50 w-full mt-1 bg-white rounded-xl border border-gray-200 shadow-xl">
+                <div v-if="searching" class="flex items-center gap-3 px-4 py-3 text-sm text-gray-500">
+                  <div class="w-4 h-4 border-2 border-secondary-02 border-t-transparent rounded-full animate-spin" />
+                  Đang tìm kiếm...
+                </div>
+                <div v-else-if="suggestions.length === 0" class="px-4 py-6 flex justify-center items-center gap-2 text-center text-sm text-gray-400">
+                  <icons-search class="w-8 h-8 text-gray-300" />
+                  Không tìm thấy sản phẩm nào
+                </div>
+                <ul v-else class="max-h-72 overflow-y-auto py-1">
+                  <li v-for="(product, idx) in suggestions" :key="product.id"
+                    class="flex items-center gap-3 px-3 py-2.5 cursor-pointer transition-colors"
+                    :class="highlightedIndex === idx ? 'bg-secondary/60' : 'hover:bg-secondary/40'"
+                    @click="selectProduct(product)" @mouseenter="highlightedIndex = idx">
+                    <img v-if="product.images?.[0]?.url" :src="product.images[0].url" :alt="product.name"
+                      class="w-10 h-10 rounded-lg object-cover shrink-0" />
+                    <div v-else class="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center shrink-0">
+                      <icons-search class="w-5 h-5 text-gray-400" />
+                    </div>
+                    <div class="flex-1 min-w-0">
+                      <p class="text-sm font-medium text-gray-900 truncate">{{ product.name }}</p>
+                      <div class="flex items-center gap-2 mt-0.5">
+                        <span class="text-xs text-gray-500">{{ product.brand }}</span>
+                        <span class="text-gray-300">·</span>
+                        <span class="text-xs text-gray-500">{{ product.category?.name }}</span>
+                      </div>
+                    </div>
+                  </li>
+                </ul>
+              </div>
+            </Transition>
           </div>
-          <div class="flex justify-between gap-2 m:gap-6 items-center h-7 m:h-full ">
-            <div
-              class="flex justify-between items-center gap-4 bg-secondary pl-3 xs:pl-5 pr-3 h-full flex-1 rounded-sm  md:max-w-60.75">
-              <input type="text"
-                class=" text-xs leading-4.5 opacity-50 text-black w-30 md:w-auto md:flex-1 placeholder-transparent md:placeholder-black  focus:placeholder-transparent"
-                placeholder="What are you looking for?">
-              <icons-search class="w-4 h-4 lg:w-6 lg:h-6" />
-            </div>
-            <div v-if="route.path !== '/sign-up' && route.path !== '/sign-in'"
-              class="hidden md:flex justify-between gap-2 m:gap-4 items-center">
-              <nuxt-link to="/wishlist">
+
+          <div class="flex justify-between gap-2 m:gap-6 items-center h-7 m:h-full">
+            <button v-if="!authStore.isAuthenticated && route.path !== '/sign-in' && route.path !== '/sign-up'"
+              @click="router.push('/sign-in')"
+              class="hidden md:flex whitespace-nowrap items-center justify-center text-xs px-3 h-full rounded-sm bg-secondary-02 text-white hover:bg-secondary hover:text-secondary-02 transition-colors duration-300 ease">
+              Đăng nhập
+            </button>
+
+            <div v-if="authStore.isAuthenticated" class="hidden md:flex justify-between gap-2 m:gap-4 items-center">
+              <NuxtLink to="/wishlist">
                 <icons-wishlist class="h-6 w-6 m:h-8 m:w-8 hover:text-secondary-02 transition-all duration-300 ease" />
-              </nuxt-link>
-              <nuxt-link to="/cart">
+              </NuxtLink>
+              <NuxtLink to="/cart">
                 <icons-cart class="h-6 w-6 m:h-8 m:w-8 hover:text-secondary-02 transition-all duration-300 ease" />
-              </nuxt-link>
-              <div v-if="authStore.isLoggedIn" class="group relative inline-block cursor-pointer">
+              </NuxtLink>
+              <div class="group relative inline-block cursor-pointer">
                 <icons-header-user class="transition-all duration-300 group-hover:opacity-0 ease" />
                 <icons-header-user2
-                  class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-all duration-300 ease " />
+                  class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-all duration-300 ease" />
                 <div
                   class="absolute top-9 right-0 opacity-0 invisible group-hover:opacity-100 group-hover:visible 
-             transition-all duration-300 ease backdrop-blur-3xl pt-4.5 pb-2.5 flex flex-col gap-3 rounded-sm bg-black/4"
-                  :class="{ '!backdrop-blur-none !bg-black': y > 250 || route.path !== '/' }">
+                    transition-all duration-300 ease pt-4.5 pb-2.5 flex flex-col gap-3 rounded-sm bg-gray-500">
                   <template v-for="item in accountDropdown" :key="item.label">
-                    <!-- Logout -->
-                    <button v-if="item.label === 'Logout'" @click="handleLogout"
-                      class="pl-5 pr-3 flex gap-4 h-6 items-center text-text hover:text-secondary-02 w-full text-left">
-                      <component :is="item.icon" class="h-6 w-6" />
-                      <p class="whitespace-nowrap text-sm leading-5.25">
-                        {{ item.label }}
-                      </p>
+                    <button v-if="item.type === 'action'" @click="item.action?.()"
+                      class="pl-5 pr-3 flex gap-4 h-6 items-center text-text w-full text-left hover:text-red-400 transition-all duration-300 ease">
+                      <component :is="item.icon" class="h-6 w-6 shrink-0" />
+                      <p class="whitespace-nowrap text-sm leading-5.25">{{ item.label }}</p>
                     </button>
-                    <nuxt-link v-else-if="item.label === 'My Order'" to="/orders"
-                      class="pl-5 pr-3 flex gap-4 h-6 items-center text-text hover:text-secondary-02 w-full text-left">
-                      <component :is="item.icon" class="h-6 w-6" />
-                      <p class="whitespace-nowrap text-sm leading-5.25">
-                        {{ item.label }}
-                      </p>
-                    </nuxt-link>
-                    <!-- Các item bình thường -->
-                    <nuxt-link v-else :to="item.to"
-                      class="pl-5 pr-3 flex gap-4 h-6 items-center text-text hover:text-secondary-02">
-                      <component :is="item.icon" class="h-6 w-6" />
-                      <p class="whitespace-nowrap text-sm leading-5.25">
-                        {{ item.label }}
-                      </p>
-                    </nuxt-link>
+                    <NuxtLink v-else :to="item.to"
+                      class="pl-5 pr-3 flex gap-4 h-6 items-center text-text transition-all hover:text-red-400 duration-300 ease">
+                      <component :is="item.icon" class="h-6 w-6 shrink-0" />
+                      <p class="whitespace-nowrap text-sm leading-5.25">{{ item.label }}</p>
+                    </NuxtLink>
                   </template>
                 </div>
               </div>
             </div>
+
             <button
               class="flex md:hidden w-8 h-8 rounded-lg justify-center items-center bg-gray-200 active:text-white active:bg-black">
               <icons-menu-header class="h-4 w-4" />
@@ -109,48 +113,152 @@
     </div>
   </div>
 </template>
+
 <script setup lang="ts">
-import { LazyIconsCancel, LazyIconsHeaderLogOut, LazyIconsHeaderMallbag, LazyIconsHeaderReview, LazyIconsHeaderUser } from '#components';
-import { Autoplay, Navigation } from 'swiper/modules';
-import { Swiper, SwiperSlide } from 'swiper/vue';
-import 'swiper/css'
-import 'swiper/css/navigation'
-import 'swiper/css/pagination'
-const authStore = useAuthStore()
-const { y } = useWindowScroll();
+import { LazyIconsHeaderLogOut, LazyIconsHeaderMallbag, LazyIconsHeaderUser } from '#components'
+const { y } = useWindowScroll()
 const scrollY = computed(() => y.value)
 const route = useRoute()
 const router = useRouter()
+const authStore = useAuthStore()
+const cartStore = useCartStore()
+const wishlistStore = useWishlistStore()
+const toast = useToast()
+
 const marketing = ref([
-  'Summer Sale For All Swim Suits And Free Express Delivery - OFF 50%!',
-  'Mega Summer Sale: All Swimwear 50% OFF + Free Fast Shipping!',
-  'Dive into Savings: 50% OFF All Swimsuits + Free Express Delivery!',
-  'Hot Summer Deal: Get 50% OFF Swimwear + Free Shipping Today!',
-  'Splash into Style: All Swimsuits 50% OFF with Free Quick Delivery!'
-])
-const menuHeader = ref([
-  { label: 'Home', to: '/', },
-  { label: 'Contact', to: '/contact', },
-  { label: 'About', to: '/about', },
-  { label: 'Sign up', to: '/sign-up', },
+  'Theo dõi fanpage để nhận mã giảm giá mới nhất',
+  'Giao hàng nhanh - Kiểm tra hàng trước khi thanh toán',
+  'Mua sắm thông minh - Công nghệ dẫn đầu',
+  'Hỗ trợ kỹ thuật tận tâm 24/7',
+  'Tai nghe, loa Bluetooth ưu đãi cực hấp dẫn',
 ])
 
-const accountDropdown = ref([
-  { label: 'Manage My Account', icon: LazyIconsHeaderUser, to: '/account' },
-  { label: 'My Order', icon: LazyIconsHeaderMallbag, to: '' },
-  { label: 'My Cancellations', icon: LazyIconsCancel, to: '' },
-  { label: 'My Reviews', icon: LazyIconsHeaderReview, to: '' },
-  { label: 'Logout', icon: LazyIconsHeaderLogOut, to: '' },
+const accountDropdown = shallowRef([
+  { label: 'Thông tin cá nhân', icon: LazyIconsHeaderUser, to: '/account', type: 'link' },
+  { label: 'Đơn hàng', icon: LazyIconsHeaderMallbag, to: '/orders', type: 'link' },
+  { label: 'Đăng xuất', icon: LazyIconsHeaderLogOut, action: handleLogout, type: 'action' },
 ])
-const language = ref(['English', 'Tiếng Việt', 'Thailand'])
-const selectedLanguage = ref(language.value[0])
-const selectLanguage = (item: string) => {
-  selectedLanguage.value = item
+
+const searchQuery = ref((route.query.search as string) || '')
+const suggestions = ref<any[]>([])
+const searching = ref(false)
+const dropdownOpen = ref(false)
+const highlightedIndex = ref(-1)
+const searchContainer = ref<HTMLElement | null>(null)
+let debounceTimer: ReturnType<typeof setTimeout> | null = null
+
+function onInput() {
+  dropdownOpen.value = true
+  highlightedIndex.value = -1
+  if (debounceTimer) clearTimeout(debounceTimer)
+  if (!searchQuery.value.trim()) {
+    suggestions.value = []
+    return
+  }
+  debounceTimer = setTimeout(fetchSuggestions, 300)
 }
 
-const handleLogout = () => {
-  authStore.logout()
-  router.push('/sign-in')
+function onFocus() {
+  if (searchQuery.value.length >= 1) dropdownOpen.value = true
+}
+
+async function fetchSuggestions() {
+  if (!searchQuery.value.trim()) return
+  searching.value = true
+  try {
+    const res = await $fetch<any>('http://localhost:3001/api/products', {
+      credentials: 'include',
+      query: { search: searchQuery.value, limit: 8 },
+    })
+    suggestions.value = res.data.products || []
+  } catch {
+    suggestions.value = []
+  } finally {
+    searching.value = false
+  }
+}
+
+
+function closeDropdown() {
+  dropdownOpen.value = false
+  highlightedIndex.value = -1
+}
+
+function selectProduct(product: any) {
+  closeDropdown()
+  searchQuery.value = ''
+  suggestions.value = []
+  navigateTo(`/products/${product.slug}`)
+}
+
+function doSearchNavigate() {
+  if (!searchQuery.value.trim()) return
+  closeDropdown()
+  navigateTo(`/products?search=${encodeURIComponent(searchQuery.value)}`)
+}
+
+function handleClickOutside(e: MouseEvent) {
+  if (searchContainer.value && !searchContainer.value.contains(e.target as Node)) {
+    closeDropdown()
+  }
+}
+
+onMounted(() => document.addEventListener('mousedown', handleClickOutside))
+onUnmounted(() => document.removeEventListener('mousedown', handleClickOutside))
+
+watch(() => route.query.search, (val) => {
+  searchQuery.value = (val as string) || ''
+})
+
+async function handleLogout() {
+  await authStore.logout()
+  cartStore.items = []
+  wishlistStore.items = []
+  toast.add({ title: 'Đã đăng xuất', color: 'info' })
+  await navigateTo('/')
 }
 </script>
-<style lang="scss" scoped></style>
+
+<style scoped>
+.marketing-marquee {
+  display: flex;
+  align-items: center;
+  width: max-content;
+  animation: marquee 22s linear infinite;
+  gap: 0;
+}
+
+.marketing-item {
+  white-space: nowrap;
+  color: white;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  padding-left: 2rem;
+  padding-right: 2rem;
+  position: relative;
+}
+
+.marketing-item::after {
+  content: "•";
+  opacity: 0.5;
+  font-size: 16px;
+  position: absolute;
+  right: -3px;
+  top: 50%;
+  transform: translateY(-50%);
+  line-height: 1;
+  display: flex;
+  align-items: center;
+}
+
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(-50%);
+  }
+}
+</style>

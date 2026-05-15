@@ -1,106 +1,79 @@
 import { defineStore } from "pinia";
 
-export const useAuthStore = defineStore("auth", {
-  state: () => ({
-    user: null as any,
-    token: null as string | null,
-    isLoggedIn: false,
-  }),
-  actions: {
-    // Đăng ký
-    async register(name: string, email: string, password: string) {
-      const config = useRuntimeConfig();
-
-      try {
-        const response: any = await $fetch(
-          `${config.public.apiBase}/auth/register`,
-          {
-            method: "POST",
-            body: { name, email, password },
-          }
-        );
-
-        this.user = response;
-        this.token = response.token;
-        this.isLoggedIn = true;
-
-        const tokenCookie = useCookie("token");
-        const userCookie = useCookie("user");
-        tokenCookie.value = response.token;
-        userCookie.value = JSON.stringify(response);
-
-        return { success: true, data: response };
-      } catch (error: any) {
-        return {
-          success: false,
-          error: error.data?.message || error.message || "Đăng ký thất bại",
-        };
-      }
-    },
-
-    // Đăng nhập
-    async login(email: string, password: string) {
-      const config = useRuntimeConfig();
-
-      try {
-        const response: any = await $fetch(
-          `${config.public.apiBase}/auth/login`,
-          {
-            method: "POST",
-            body: { email, password },
-          }
-        );
-
-        this.user = response;
-        this.token = response.token;
-        this.isLoggedIn = true;
-
-        const tokenCookie = useCookie("token");
-        const userCookie = useCookie("user");
-        tokenCookie.value = response.token;
-        userCookie.value = JSON.stringify(response);
-
-        return { success: true, data: response };
-      } catch (error: any) {
-        return {
-          success: false,
-          error: error.data?.message || error.message || "Đăng nhập thất bại",
-        };
-      }
-    },
-    // Đăng xuất
-    logout() {
-      this.user = null;
-      this.token = null;
-      this.isLoggedIn = false;
-
-      const tokenCookie = useCookie("token");
-      const userCookie = useCookie("user");
-      tokenCookie.value = null;
-      userCookie.value = null;
-
-      navigateTo("/");
-    },
-
-    // Khôi phục session
-    initAuth() {
-      const tokenCookie = useCookie("token");
-      const userCookie = useCookie("user");
-
-      if (tokenCookie.value && userCookie.value) {
-        try {
-          this.token = tokenCookie.value;
-          this.user = JSON.parse(userCookie.value as string);
-          this.isLoggedIn = true;
-        } catch (error) {
-          this.logout();
-        }
-      }
-    },
-  },
-  getters: {
-    getUserName: (state) => state.user?.name || "Guest",
-    getUserEmail: (state) => state.user?.email || "",
-    getUserRole: (state) => state.user?.role || "USER",
-  },
+export const useAuthStore = defineStore("auth", () => {
+  const config = useRuntimeConfig();
+  const baseURL = config.public.apiBase as string;
+  const user = useCookie<any | null>("shop_user", {
+    sameSite: "lax",
+    path: "/",
+    maxAge: 60 * 60 * 24 * 7,
+    default: () => null,
+  });
+  const isAuthenticated = computed(() => !!user.value);
+  async function login(emailOrUsername: string, password: string) {
+    const res = await $fetch<any>("/auth/login", {
+      baseURL,
+      method: "POST",
+      body: { emailOrUsername, password },
+      credentials: "include",
+    });
+    user.value = res.data.user;
+    return res.data;
+  }
+  async function register(
+    email: string,
+    name: string,
+    password: string,
+    username: string,
+  ) {
+    const res = await $fetch<any>("/auth/register", {
+      baseURL,
+      method: "POST",
+      body: { email, name, password, username },
+      credentials: "include",
+    });
+    user.value = res.data.user;
+    return res.data;
+  }
+  async function doRefresh() {
+    await $fetch<any>("/auth/refresh", {
+      baseURL,
+      method: "POST",
+      credentials: "include",
+    });
+  }
+  async function updateProfile(data: {
+    name?: string;
+    phone?: string;
+    address?: string;
+  }) {
+    const res = await $fetch<any>("/users/profile", {
+      baseURL,
+      method: "PATCH",
+      body: data,
+      credentials: "include",
+    });
+    user.value = { ...user.value, ...res.data };
+    return res.data;
+  }
+  async function logout() {
+    try {
+      await $fetch("/auth/logout", {
+        baseURL,
+        method: "POST",
+        credentials: "include",
+      });
+    } catch {
+    }
+    user.value = null;
+  }
+  return {
+    user,
+    isAuthenticated,
+    login,
+    register,
+    doRefresh,
+    updateProfile,
+    logout,
+  };
 });

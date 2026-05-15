@@ -7,13 +7,13 @@
             <div class="py-35 gap-20 flex flex-col items-center justify-center">
                 <div class="flex flex-col gap-10 items-center text-black">
                     <p class="text-[110px] leading-28.75 tracking-[3%] font-medium font-[Inter]">
-                        {{ error?.statusCode }} {{ error?.message }}
+                         {{ error?.message }}
                     </p>
                     <p class="leading-6">Your visited page not found. You may go home page.</p>
                 </div>
-                <nuxt-link to="/"
+                <NuxtLink to="/"
                     class="py-4 px-12 hover:shadow-lg text-text bg-secondary-02 hover:text-secondary-02 active:text-secondary-02 hover:bg-text active:bg-text rounded-sm">Back
-                    to home page</nuxt-link>
+                    to home page</NuxtLink>
             </div>
             <LayoutFooter />
         </div>

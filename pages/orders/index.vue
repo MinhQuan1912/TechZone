@@ -1,96 +1,103 @@
 <template>
-   <div class="container mx-auto px-4 py-8">
-      <h1 class="text-3xl font-bold mb-8">Đơn hàng của tôi</h1>
-
-      <div v-if="orders.length > 0" class="space-y-6">
-         <div v-for="order in orders" :key="order.id" class="bg-white rounded-lg shadow-md p-6">
-            <div class="flex justify-between items-start mb-4">
-               <div>
-                  <h3 class="text-lg font-bold">Đơn hàng #{{ order.id }}</h3>
-                  <p class="text-sm text-gray-600">{{ formatDate(order.createdAt) }}</p>
+   <div class="max-w-4xl mx-auto px-4 sm:px-6 py-8">
+      <h1 class="text-2xl font-bold text-gray-900 mb-6">Đơn hàng của tôi</h1>
+      <div v-if="store.loading" class="space-y-4">
+         <div v-for="i in 3" :key="i" class="animate-pulse bg-white rounded-2xl h-36 border" />
+      </div>
+      <CommonAppEmpty v-else-if="store.items.length === 0" icon="i-heroicons-shopping-bag" title="Chưa có đơn hàng"
+         description="Mua sắm ngay để có đơn hàng đầu tiên" action-label="Mua sắm ngay" action-to="/products" />
+      <div v-else class="space-y-4">
+         <div v-for="order in store.items" :key="order.id"
+            class="bg-white rounded-2xl border border-gray-100 overflow-hidden hover:border-gray-200 transition-colors">
+            <div
+               class="flex items-center justify-between px-5 py-4 bg-gray-50 border-b border-gray-100 flex-wrap gap-2">
+               <div class="flex items-center gap-2 flex-wrap">
+                  <span class="font-mono text-xs text-gray-400">{{ order.code }}</span>
+                  <UBadge :color="(statusColors[order.status] as any)" variant="soft" size="sm">
+                     {{ statusLabels[order.status] }}
+                  </UBadge>
+                  <UBadge v-if="order.isPaid" color="success" variant="soft" size="sm">
+                     <UIcon name="i-heroicons-check" class="w-3 h-3 mr-0.5" />
+                     Đã TT
+                  </UBadge>
+                  <UBadge :color="order.paymentMethod === 'VNPAY' ? 'primary' : 'neutral'" variant="soft" size="sm">
+                     {{ order.paymentMethod }}
+                  </UBadge>
                </div>
-               <div class="text-right">
-                  <p class="text-2xl font-bold text-blue-600">
-                     {{ formatPrice(order.totalAmount) }}
-                  </p>
-                  <span
-                     :class="`inline-block mt-2 px-3 py-1 rounded text-sm font-semibold ${getStatusColor(order.status)}`">
-                     {{ getStatusText(order.status) }}
+               <span class="text-xs text-gray-400">{{ formatDate(order.createdAt) }}</span>
+            </div>
+
+            <div class="px-5 py-4">
+               <div class="flex items-center gap-3 flex-wrap">
+                  <div v-for="item in order.items.slice(0, 3)" :key="item.id" class="flex items-center gap-2">
+                     <div class="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center shrink-0">
+                       <img v-if="item.product?.images?.[0]" :src="item.product.images[0].url" alt="Product Image" class="w-full h-full object-cover rounded-lg" />
+                     </div>
+                     <div>
+                        <p class="text-xs font-medium text-gray-900 max-w-28 truncate">{{ item.product?.name }}</p>
+                        <p class="text-xs text-gray-400">x{{ item.quantity }}</p>
+                     </div>
+                  </div>
+                  <span v-if="order.items.length > 3" class="text-xs text-gray-400 italic">
+                     +{{ order.items.length - 3 }} sản phẩm khác
                   </span>
                </div>
             </div>
 
-            <div class="border-t pt-4">
-               <p class="text-sm text-gray-600 mb-2">
-                  <strong>Địa chỉ:</strong> {{ order.shippingAddress }}
-               </p>
-               <p class="text-sm text-gray-600">
-                  <strong>SĐT:</strong> {{ order.phoneNumber }}
-               </p>
+            <div class="flex items-center justify-between px-5 py-4 border-t border-gray-100 flex-wrap gap-3">
+               <div>
+                  <span class="text-sm text-gray-500">Tổng: </span>
+                  <span class="font-bold text-primary-600 text-lg">
+                     {{ formatCurrency(order.finalAmount) }}
+                  </span>
+                  <span v-if="order.discountAmount > 0" class="text-xs text-green-600 ml-2">
+                     (Giảm {{ formatCurrency(order.discountAmount) }})
+                  </span>
+               </div>
+               <div class="flex gap-2">
+                  <UButton size="sm" color="neutral" variant="outline" :to="`/orders/${order.id}`">
+                     Chi tiết
+                  </UButton>
+                  <UButton v-if="order.paymentMethod === 'COD' && ['PENDING', 'CONFIRMED'].includes(order.status)"
+                     size="sm" color="error" variant="outline" :loading="cancellingId === order.id"
+                     @click="handleCancel(order.id)">
+                     Hủy
+                  </UButton>
+               </div>
             </div>
-
-            <NuxtLink :to="`/orders/${order.id}`" class="inline-block mt-4 text-blue-600 hover:underline">
-               Xem chi tiết →
-            </NuxtLink>
          </div>
-      </div>
-
-      <div v-else class="text-center py-16">
-         <ShoppingBagIcon class="w-24 h-24 text-gray-400 mx-auto mb-4" />
-         <h2 class="text-2xl font-bold text-gray-700 mb-2">Chưa có đơn hàng</h2>
-         <p class="text-gray-600 mb-6">Bạn chưa đặt hàng lần nào</p>
-         <NuxtLink to="/products" class="btn-primary inline-block">
-            Mua sắm ngay
-         </NuxtLink>
+         <CommonAppPagination :current-page="store.page" :total-pages="store.totalPages" @change="store.changePage" />
       </div>
    </div>
 </template>
 
 <script setup lang="ts">
-import { ShoppingBagIcon } from '@heroicons/vue/24/outline'
+import type { OrderStatus } from '~/types'
 
-definePageMeta({ middleware: ['auth'] })
+definePageMeta({ middleware: 'auth' })
+useHead({ title: 'Đơn hàng của tôi' })
 
-const { getMyOrders } = useApi()
-const orders = ref<any[]>([])
+const store = useOrderStore()
+const { formatCurrency, formatDate } = useFormat()
+const cancellingId = ref<number | null>(null)
 
-const loadOrders = async () => {
-   const { data } = await getMyOrders()
-   if (data) orders.value = data as any[]
+const statusColors: Record<OrderStatus, string> = {
+   PENDING: 'warning', CONFIRMED: 'info',
+   SHIPPING: 'primary', DELIVERED: 'success', CANCELLED: 'error',
+}
+const statusLabels: Record<OrderStatus, string> = {
+   PENDING: 'Chờ xác nhận', CONFIRMED: 'Đã xác nhận',
+   SHIPPING: 'Đang giao', DELIVERED: 'Đã giao', CANCELLED: 'Đã hủy',
 }
 
-const getStatusColor = (status: string) => {
-   const colors: any = {
-      'PENDING': 'bg-yellow-100 text-yellow-800',
-      'PROCESSING': 'bg-blue-100 text-blue-800',
-      'COMPLETED': 'bg-green-100 text-green-800',
-      'CANCELLED': 'bg-red-100 text-red-800'
+async function handleCancel(id: number) {
+   cancellingId.value = id
+   try {
+      await store.cancelOrder(id)
+   } finally {
+      cancellingId.value = null
    }
-   return colors[status] || 'bg-gray-100'
 }
 
-const getStatusText = (status: string) => {
-   const texts: any = {
-      'PENDING': 'Chờ xử lý',
-      'PROCESSING': 'Đang xử lý',
-      'COMPLETED': 'Hoàn thành',
-      'CANCELLED': 'Đã hủy'
-   }
-   return texts[status] || status
-}
-
-const formatPrice = (price: number) => {
-   return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND'
-   }).format(price)
-}
-
-const formatDate = (date: string) => {
-   return new Date(date).toLocaleString('vi-VN')
-}
-
-onMounted(() => {
-   loadOrders()
-})
+onMounted(() => store.fetchMyOrders())
 </script>
