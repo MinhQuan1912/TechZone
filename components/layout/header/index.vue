@@ -165,8 +165,11 @@ function onFocus() {
 async function fetchSuggestions() {
   if (!searchQuery.value.trim()) return
   searching.value = true
+  const config = useRuntimeConfig()
+  const baseURL = config.public.apiBase as string;
   try {
-    const res = await $fetch<any>('http://localhost:3001/api/products', {
+    const res = await $fetch<any>('/api/products', {
+      baseURL,
       credentials: 'include',
       query: { search: searchQuery.value, limit: 8 },
     })
