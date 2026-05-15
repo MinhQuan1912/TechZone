@@ -112,7 +112,7 @@
                <template #footer>
                   <UButton color="primary" size="lg" class="w-full font-bold" :disabled="selectedIds.length === 0"
                      to="/checkout" @click="saveCheckoutItems">
-                     Thanh toán ({{ selectedIds.length }})
+                     Thanh toán 
                   </UButton>
                </template>
             </UCard>

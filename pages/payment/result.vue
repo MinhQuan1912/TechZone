@@ -32,9 +32,9 @@
             <UButton v-if="!isSuccess" to="/cart" color="primary" icon="i-heroicons-arrow-path">
                Thử lại
             </UButton>
-            <UButton to="/" color="neutral" variant="outline">
+            <NuxtLink to="/" color="neutral" variant="outline">
                Về trang chủ
-            </UButton>
+            </NuxtLink>
          </div>
       </template>
    </div>
