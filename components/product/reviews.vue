@@ -101,9 +101,6 @@
                            :class="s <= review.rating ? 'text-yellow-400' : 'text-gray-200'" />
                      </div>
                      <span class="text-xs text-gray-400">{{ formatDate(review.createdAt) }}</span>
-                     <UBadge v-if="review.updatedAt !== review.createdAt" color="neutral" variant="soft" size="xs">
-                        đã chỉnh sửa
-                     </UBadge>
                   </div>
                   <p v-if="editingId !== review.id" class="text-sm text-gray-700 mt-1.5 leading-relaxed">
                      {{ review.content }}
