@@ -140,7 +140,21 @@ function handleSend() {
 }
 
 function formatTime(dateStr: string) {
-   return new Date(dateStr).toLocaleTimeString('vi-VN', {
+   const date = new Date(dateStr)
+   const today = new Date()
+   const isToday = date.toDateString() === today.toDateString()
+
+   if (isToday) {
+      return date.toLocaleTimeString('vi-VN', {
+         hour: '2-digit',
+         minute: '2-digit',
+      })
+   }
+
+   return date.toLocaleDateString('vi-VN', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
    })
