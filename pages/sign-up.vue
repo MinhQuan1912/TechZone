@@ -8,7 +8,7 @@
             <form class="space-y-4" @submit.prevent="handleRegister">
                 <UFormField label="Tên đăng nhập">
                     <div class="relative">
-                        <UInput v-model="form.username" placeholder="vd: nguyenvana_123" icon="i-heroicons-at-symbol"
+                        <UInput v-model="form.username" placeholder="nguyenvana_123" icon="i-heroicons-at-symbol"
                             class="w-full" size="lg" :disabled="loading" autocomplete="username"
                             @input="onUsernameInput" />
                         <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
