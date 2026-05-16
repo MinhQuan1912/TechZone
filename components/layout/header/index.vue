@@ -38,30 +38,42 @@
                   <div class="w-4 h-4 border-2 border-secondary-02 border-t-transparent rounded-full animate-spin" />
                   Đang tìm kiếm...
                 </div>
-                <div v-else-if="suggestions.length === 0" class="px-4 py-6 flex justify-center items-center gap-2 text-center text-sm text-gray-400">
+                <div v-else-if="suggestions.length === 0"
+                  class="px-4 py-6 flex justify-center items-center gap-2 text-center text-sm text-gray-400">
                   <icons-search class="w-8 h-8 text-gray-300" />
                   Không tìm thấy sản phẩm nào
                 </div>
-                <ul v-else class="max-h-72 overflow-y-auto py-1">
-                  <li v-for="(product, idx) in suggestions" :key="product.id"
-                    class="flex items-center gap-3 px-3 py-2.5 cursor-pointer transition-colors"
-                    :class="highlightedIndex === idx ? 'bg-secondary/60' : 'hover:bg-secondary/40'"
-                    @click="selectProduct(product)" @mouseenter="highlightedIndex = idx">
-                    <img v-if="product.images?.[0]?.url" :src="product.images[0].url" :alt="product.name"
-                      class="w-10 h-10 rounded-lg object-cover shrink-0" />
-                    <div v-else class="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center shrink-0">
-                      <icons-search class="w-5 h-5 text-gray-400" />
-                    </div>
-                    <div class="flex-1 min-w-0">
-                      <p class="text-sm font-medium text-gray-900 truncate">{{ product.name }}</p>
-                      <div class="flex items-center gap-2 mt-0.5">
-                        <span class="text-xs text-gray-500">{{ product.brand }}</span>
-                        <span class="text-gray-300">·</span>
-                        <span class="text-xs text-gray-500">{{ product.category?.name }}</span>
+                <template v-else>
+                  <ul class="py-1">
+                    <li v-for="(product, idx) in suggestions.slice(0, 4)" :key="product.id"
+                      class="flex items-center gap-3 px-3 py-2.5 cursor-pointer transition-colors"
+                      :class="highlightedIndex === idx ? 'bg-secondary/60' : 'hover:bg-secondary/40'"
+                      @click="selectProduct(product)" @mouseenter="highlightedIndex = idx">
+                      <img v-if="product.images?.[0]?.url" :src="product.images[0].url" :alt="product.name"
+                        class="w-10 h-10 rounded-lg object-cover shrink-0" />
+                      <div v-else class="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center shrink-0">
+                        <icons-search class="w-5 h-5 text-gray-400" />
                       </div>
-                    </div>
-                  </li>
-                </ul>
+                      <div class="flex-1 min-w-0">
+                        <p class="text-sm font-medium text-gray-900 truncate">{{ product.name }}</p>
+                        <div class="flex items-center gap-2 mt-0.5">
+                          <span class="text-xs text-gray-500">{{ product.brand }}</span>
+                          <span class="text-gray-300">·</span>
+                          <span class="text-xs text-gray-500">{{ product.category?.name }}</span>
+                        </div>
+                      </div>
+                    </li>
+                  </ul>
+                  <div v-if="suggestions.length > 4" class="border-t border-gray-100">
+                    <button
+                      class="w-full px-4 py-2.5 text-sm text-secondary-02 font-medium hover:bg-secondary/40 transition-colors flex items-center justify-center gap-2"
+                      @click="doSearchNavigate">
+                      Xem tất cả kết quả cho
+                      <span class="font-semibold">"{{ searchQuery }}"</span>
+                      <icons-search class="w-4 h-4" />
+                    </button>
+                  </div>
+                </template>
               </div>
             </Transition>
           </div>
@@ -168,10 +180,10 @@ async function fetchSuggestions() {
   const config = useRuntimeConfig()
   const baseURL = config.public.apiBase as string;
   try {
-    const res = await $fetch<any>('/api/products', {
+    const res = await $fetch<any>('/products', {
       baseURL,
       credentials: 'include',
-      query: { search: searchQuery.value, limit: 8 },
+      query: { search: searchQuery.value, limit: 5 },
       headers: {
         "ngrok-skip-browser-warning": "true",
       },
