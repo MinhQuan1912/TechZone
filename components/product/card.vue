@@ -49,7 +49,7 @@
             </div>
             <span class="text-xs text-gray-500">({{ product.reviewCount }})</span>
          </div>
-         <div v-else>Sản phẩm chưa có đánh giá nào</div>
+         <div v-else class="text-xs mt-1.5">Sản phẩm chưa có đánh giá nào</div>
 
          <div class="mt-2">
             <div class="flex items-baseline gap-2 flex-wrap">
