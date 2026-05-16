@@ -118,6 +118,14 @@ const authStore = useAuthStore()
 const inputText = ref('')
 const messagesContainer = ref<HTMLElement>()
 
+function scrollToBottom() {
+   nextTick(() => {
+      if (messagesContainer.value) {
+         messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight
+      }
+   })
+}
+
 function handleToggle() {
    chat.toggleChat()
    if (chat.isChatOpen.value && authStore.isAuthenticated && !chat.isConnected.value) {
@@ -138,24 +146,18 @@ function formatTime(dateStr: string) {
    })
 }
 
-// Auto scroll xuống khi có tin mới
+watch(() => chat.messages.value.length, scrollToBottom)
 watch(
-   () => chat.messages.value.length,
-   async () => {
-      await nextTick()
-      if (messagesContainer.value) {
-         messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight
-      }
-   },
+   () => chat.isChatOpen.value,
+   (open) => {
+      if (open) scrollToBottom()
+   }
 )
-
-// Connect khi user đăng nhập
 watch(
    () => authStore.isAuthenticated,
    (logged) => {
       if (!logged) chat.disconnect()
    },
 )
-
 onUnmounted(() => chat.disconnect())
 </script>

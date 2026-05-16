@@ -7,7 +7,7 @@ export const useWishlistStore = defineStore("wishlist", () => {
 
   const items = ref<WishlistItem[]>([]);
   const loading = ref(false);
-
+  const isFetched = ref(false);
   const productIds = computed(() => items.value.map((i) => i.productId));
 
   const isInWishlist = (productId: number) =>
@@ -19,9 +19,12 @@ export const useWishlistStore = defineStore("wishlist", () => {
       items.value = [];
       return;
     }
-    loading.value = true;
+    if (!isFetched.value) {
+      loading.value = true;
+    }
     try {
       items.value = await api<WishlistItem[]>("/wishlist");
+      isFetched.value = true;
     } catch {
       items.value = [];
     } finally {
