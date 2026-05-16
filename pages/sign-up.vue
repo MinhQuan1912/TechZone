@@ -212,9 +212,8 @@ async function handleRegister() {
     loading.value = true
     try {
         await authStore.register(form.email, form.name, form.password, form.username)
-        await Promise.all([cartStore.fetchCart(), wishlistStore.fetchWishlist()])
-        toast.add({ title: 'Đăng ký thành công!', color: 'success' })
-        await navigateTo('/')
+        toast.add({ title: 'Đăng ký thành công!',description: 'Vui lòng đăng nhập để tiếp tục', color: 'success' })
+        await navigateTo('/sign-in')
     } catch (e: any) {
         error.value = e?.data?.message || 'Đăng ký thất bại'
     } finally {
