@@ -95,10 +95,10 @@
                   enter-from-class="opacity-0 scale-50" enter-to-class="opacity-100 scale-100"
                   leave-active-class="transition-all duration-150 ease-in" leave-from-class="opacity-100 scale-100"
                   leave-to-class="opacity-0 scale-50">
-                  <span v-if="cartStore.totalItems > 0" class="absolute -top-2 -right-2 min-w-[18px] h-[18px] px-1
+                  <span v-if="cartStore.items.length > 0" class="absolute -top-2 -right-2 min-w-[18px] h-[18px] px-1
              bg-red-500 text-white text-[10px] font-bold rounded-full
              flex items-center justify-center leading-none">
-                    {{ cartStore.totalItems > 99 ? '99+' : cartStore.totalItems }}
+                    {{ cartStore.items.length > 99 ? '99+' : cartStore.items.length }}
                   </span>
                 </Transition>
               </NuxtLink>
