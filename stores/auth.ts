@@ -38,8 +38,6 @@ export const useAuthStore = defineStore("auth", () => {
         "ngrok-skip-browser-warning": "true",
       },
     });
-    user.value = res.data.user;
-    return res.data;
   }
   async function doRefresh() {
     await $fetch<any>("/auth/refresh", {
