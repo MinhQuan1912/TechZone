@@ -65,7 +65,8 @@
             để viết đánh giá (chỉ khách đã mua hàng)
          </p>
       </div>
-      <div v-if="loading" class="space-y-4">
+
+      <div v-if="loading && reviews.length === 0" class="space-y-4">
          <div v-for="i in 3" :key="i" class="animate-pulse flex gap-3 p-4 bg-gray-50 rounded-xl">
             <div class="w-10 h-10 rounded-full bg-gray-200 shrink-0" />
             <div class="flex-1 space-y-2">
@@ -100,9 +101,37 @@
                            :class="s <= review.rating ? 'text-yellow-400' : 'text-gray-200'" />
                      </div>
                      <span class="text-xs text-gray-400">{{ formatDate(review.createdAt) }}</span>
+                     <UBadge v-if="review.updatedAt !== review.createdAt" color="neutral" variant="soft" size="xs">
+                        đã chỉnh sửa
+                     </UBadge>
                   </div>
-                  <p class="text-sm text-gray-700 mt-1.5 leading-relaxed">{{ review.content }}</p>
-                  <div class="flex items-center gap-4 mt-3">
+                  <p v-if="editingId !== review.id" class="text-sm text-gray-700 mt-1.5 leading-relaxed">
+                     {{ review.content }}
+                  </p>
+                  <div v-else class="mt-3 space-y-3">
+                     <div class="flex items-center gap-1">
+                        <button v-for="s in 5" :key="s" type="button" @click="editForm.rating = s"
+                           @mouseenter="editHoverRating = s" @mouseleave="editHoverRating = 0">
+                           <UIcon name="i-heroicons-star-solid" class="w-6 h-6 transition-colors"
+                              :class="s <= (editHoverRating || editForm.rating) ? 'text-yellow-400' : 'text-gray-200'" />
+                        </button>
+                        <span v-if="editForm.rating" class="ml-2 text-xs text-gray-600">
+                           {{ ratingLabels[editForm.rating] }}
+                        </span>
+                     </div>
+                     <UTextarea v-model="editForm.content" :rows="3" class="w-full text-sm" />
+                     <div class="flex gap-2 justify-end">
+                        <UButton size="xs" color="neutral" variant="outline" :disabled="updating" @click="cancelEdit">
+                           Hủy
+                        </UButton>
+                        <UButton size="xs" color="primary" :loading="updating"
+                           :disabled="!editForm.rating || !editForm.content.trim()" @click="saveEdit(review.id)">
+                           Lưu
+                        </UButton>
+                     </div>
+                  </div>
+
+                  <div v-if="editingId !== review.id" class="flex items-center gap-4 mt-3">
                      <button class="flex items-center gap-1.5 text-xs transition-colors"
                         :class="myLike(review) === true ? 'text-blue-600 font-medium' : 'text-gray-400 hover:text-blue-500'"
                         @click="handleLike(review.id, true)">
@@ -115,15 +144,22 @@
                         <UIcon name="i-heroicons-hand-thumb-down" class="w-4 h-4" />
                         {{ review.dislikeCount }}
                      </button>
-                     <button v-if="authStore.user?.id === review.userId"
-                        class="text-xs text-gray-400 hover:text-red-500 transition-colors ml-auto"
-                        @click="deleteReview(review.id)">
-                        Xóa
-                     </button>
+                     <div v-if="authStore.user?.id === review.userId" class="flex items-center gap-3 ml-auto">
+                        <button class="text-xs text-gray-400 hover:text-primary-500 transition-colors"
+                           @click="startEdit(review)">
+                           Sửa
+                        </button>
+                        <span class="text-gray-200">|</span>
+                        <button class="text-xs text-gray-400 hover:text-red-500 transition-colors"
+                           @click="deleteReview(review.id)">
+                           Xóa
+                        </button>
+                     </div>
                   </div>
                </div>
             </div>
          </div>
+
          <div v-if="currentPage < totalPages" class="text-center">
             <UButton color="neutral" variant="outline" :loading="loading" @click="loadMore">
                Xem thêm đánh giá
@@ -149,13 +185,19 @@ const { formatDate } = useFormat()
 const reviews = ref<Review[]>([])
 const loading = ref(false)
 const submitting = ref(false)
+const updating = ref(false)
 const total = ref(0)
 const currentPage = ref(1)
 const totalPages = ref(1)
 const canReviewStatus = ref<CanReviewResult | null>(null)
 const hoverRating = ref(0)
 
+
 const reviewForm = reactive({ rating: 0, content: '' })
+
+const editingId = ref<number | null>(null)
+const editHoverRating = ref(0)
+const editForm = reactive({ rating: 0, content: '' })
 
 const ratingLabels: Record<number, string> = {
    1: 'Rất tệ', 2: 'Tệ', 3: 'Bình thường', 4: 'Tốt', 5: 'Tuyệt vời',
@@ -165,6 +207,55 @@ function myLike(review: Review): boolean | null {
    if (!authStore.isAuthenticated) return null
    const like = review.likes?.find(l => l.userId === authStore.user?.id)
    return like ? like.isLike : null
+}
+
+function startEdit(review: Review) {
+   editingId.value = review.id
+   editForm.rating = review.rating
+   editForm.content = review.content
+   editHoverRating.value = 0
+}
+
+function cancelEdit() {
+   editingId.value = null
+   editForm.rating = 0
+   editForm.content = ''
+}
+
+async function saveEdit(reviewId: number) {
+   if (!editForm.rating || !editForm.content.trim()) return
+   updating.value = true
+   try {
+      await api(`/reviews/${reviewId}`, {
+         method: 'PATCH',
+         body: {
+            rating: editForm.rating,
+            content: editForm.content,
+         },
+      })
+      const idx = reviews.value.findIndex(r => r.id === reviewId)
+      if (idx !== -1) {
+         const oldReview = reviews.value[idx]
+         if (oldReview) {
+            reviews.value[idx] = {
+               ...oldReview,
+               rating: editForm.rating,
+               content: editForm.content,
+               updatedAt: new Date().toISOString(),
+            }
+         }
+      }
+      cancelEdit()
+      toast.add({ title: 'Đã cập nhật đánh giá', color: 'success' })
+   } catch (e: any) {
+      toast.add({
+         title: 'Cập nhật thất bại',
+         description: e?.data?.message || 'Vui lòng thử lại',
+         color: 'error',
+      })
+   } finally {
+      updating.value = false
+   }
 }
 
 async function loadReviews(page = 1) {
@@ -198,12 +289,11 @@ async function submitReview() {
    if (!reviewForm.rating) {
       toast.add({ title: 'Vui lòng chọn số sao', color: 'error' })
       return
-   } 
+   }
    if (!reviewForm.content.trim()) {
       toast.add({ title: 'Nhập nội dung đánh giá', color: 'error' })
       return
    }
-
    submitting.value = true
    try {
       await api('/reviews', {
@@ -226,14 +316,14 @@ async function submitReview() {
 
 async function handleLike(reviewId: number, isLike: boolean) {
    if (!authStore.isAuthenticated) {
-      await navigateTo('/login')
+      await navigateTo('/sign-in')
       return
    }
    await api(`/reviews/${reviewId}/like`, {
       method: 'POST',
       body: { isLike },
    })
-   await loadReviews(1)
+   await loadReviews(currentPage.value)
 }
 
 async function deleteReview(id: number) {

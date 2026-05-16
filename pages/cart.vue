@@ -100,7 +100,7 @@
                      <span class="font-medium">{{ formatCurrency(selectedTotal) }}</span>
                   </div>
                   <div class="flex justify-between text-sm">
-                     <span class="text-gray-500">Vận chuyển:</span>
+                     <span class="text-gray-500">Phí vận chuyển:</span>
                      <span class="text-green-600 font-medium">Miễn phí</span>
                   </div>
                   <USeparator />
