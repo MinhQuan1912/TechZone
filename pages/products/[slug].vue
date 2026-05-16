@@ -33,7 +33,7 @@
          <div class="grid md:grid-cols-2 gap-8 lg:gap-12">
             <div>
                <ProductImages :product-images="(product as any).images || []"
-                  :variant-image-url="currentVariantImageUrl" :selected-color="currentSelectedColor"
+                  :variant-image-url="currentVariantImageUrl"
                   :alt="(product as any).name" />
             </div>
             <div class="space-y-5">
@@ -148,7 +148,7 @@
          </div>
 
          <div v-if="related.length > 0" class="mt-12">
-            <h3 class="text-xl font-bold text-gray-900 mb-6">Sản phẩm liên quan</h3>
+            <HomeSectionTitle title="Sản phẩm liên quan" />
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                <ProductCard v-for="p in related" :key="p.id" :product="p" />
             </div>

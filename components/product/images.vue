@@ -47,7 +47,6 @@ import 'swiper/css'
 const props = defineProps<{
    productImages: ProductImage[]
    variantImageUrl?: string | null
-   selectedColor?: string | null
    alt?: string
 }>()
 

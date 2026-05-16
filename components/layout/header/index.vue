@@ -89,8 +89,18 @@
               <NuxtLink to="/wishlist">
                 <icons-wishlist class="h-6 w-6 m:h-8 m:w-8 hover:text-secondary-02 transition-all duration-300 ease" />
               </NuxtLink>
-              <NuxtLink to="/cart">
+              <NuxtLink to="/cart" class="relative">
                 <icons-cart class="h-6 w-6 m:h-8 m:w-8 hover:text-secondary-02 transition-all duration-300 ease" />
+                <Transition enter-active-class="transition-all duration-200 ease-out"
+                  enter-from-class="opacity-0 scale-50" enter-to-class="opacity-100 scale-100"
+                  leave-active-class="transition-all duration-150 ease-in" leave-from-class="opacity-100 scale-100"
+                  leave-to-class="opacity-0 scale-50">
+                  <span v-if="cartStore.totalItems > 0" class="absolute -top-2 -right-2 min-w-[18px] h-[18px] px-1
+             bg-red-500 text-white text-[10px] font-bold rounded-full
+             flex items-center justify-center leading-none">
+                    {{ cartStore.totalItems > 99 ? '99+' : cartStore.totalItems }}
+                  </span>
+                </Transition>
               </NuxtLink>
               <div class="group relative inline-block cursor-pointer">
                 <icons-header-user class="transition-all duration-300 group-hover:opacity-0 ease" />
