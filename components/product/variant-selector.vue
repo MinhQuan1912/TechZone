@@ -65,8 +65,6 @@
             </button>
          </div>
       </div>
-      <UAlert v-else-if="hasAnySelection" color="warning" variant="soft" icon="i-heroicons-exclamation-triangle"
-         description="Phiên bản này hiện không có. Vui lòng chọn cấu hình khác." />
    </div>
 </template>
 

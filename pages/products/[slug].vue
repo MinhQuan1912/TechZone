@@ -226,6 +226,4 @@ async function handleAddToCart() {
       addingToCart.value = false
    }
 }
-
-
 </script>
