@@ -19,6 +19,7 @@ export const useChat = () => {
       {
         withCredentials: true,
         transports: ["websocket"],
+        auth: { type: "user" },
       },
     );
 
