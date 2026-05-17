@@ -44,13 +44,13 @@
                   <UInput v-model="editForm.phone" type="tel" class="w-full" />
                </UFormField>
 
-               <UFormField label="Tỉnh / Thành phố *">
+               <UFormField label="Tỉnh / Thành phố">
                   <CommonAddressSelect v-model="addressForm.provinceCode" :items="provinceOptions"
                      :loading="loadingProvinces" placeholder="Tìm tỉnh / thành phố"
                      @select="onProvinceChange($event.value)" />
                </UFormField>
 
-               <UFormField label="Phường / Xã *">
+               <UFormField label="Phường / Xã">
                   <CommonAddressSelect v-model="addressForm.wardCode" :items="wardOptions" :loading="loadingWards"
                      :disabled="!addressForm.provinceCode" placeholder="Tìm phường / xã"
                      @select="onWardChange($event.value)" />
