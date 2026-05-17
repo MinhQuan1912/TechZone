@@ -7,8 +7,8 @@
       </div>
 
       <div v-else-if="checkoutItems.length === 0">
-         <CommonAppEmpty icon="i-heroicons-shopping-cart" title="Không có sản phẩm để thanh toán" action-label="Xem giỏ hàng"
-            action-to="/cart" />
+         <CommonAppEmpty icon="i-heroicons-shopping-cart" title="Không có sản phẩm để thanh toán"
+            action-label="Xem giỏ hàng" action-to="/cart" />
       </div>
 
       <div v-else class="grid lg:grid-cols-3 gap-6">
@@ -24,14 +24,28 @@
                   <UFormField label="Họ tên người nhận *">
                      <UInput v-model="form.recipientName" class="w-full" />
                   </UFormField>
+
                   <UFormField label="Số điện thoại *">
                      <UInput v-model="form.recipientPhone" type="tel" class="w-full" />
                   </UFormField>
-                  <UFormField label="Địa chỉ giao hàng *">
-                     <UTextarea v-model="form.recipientAddress"
-                        placeholder="Số nhà, tên đường, phường/xã, quận/huyện, tỉnh/thành phố" :rows="3"
+
+                  <UFormField label="Tỉnh / Thành phố *">
+                     <CommonAddressSelect v-model="addressForm.provinceCode" :items="provinceOptions"
+                        :loading="loadingProvinces" placeholder="Tìm tỉnh / thành phố..."
+                        @select="onProvinceChange($event.value)" />
+                  </UFormField>
+
+                  <UFormField label="Phường / Xã *">
+                     <CommonAddressSelect v-model="addressForm.wardCode" :items="wardOptions" :loading="loadingWards"
+                        :disabled="!addressForm.provinceCode" placeholder="Tìm phường / xã..."
+                        @select="onWardChange($event.value)" />
+                  </UFormField>
+
+                  <UFormField label="Địa chỉ (số nhà, tên đường) *">
+                     <UTextarea v-model="addressForm.street" placeholder="Ví dụ: 123 Nguyễn Huệ" :rows="2"
                         class="w-full" />
                   </UFormField>
+
                   <UFormField label="Ghi chú (không bắt buộc)">
                      <UInput v-model="form.note" placeholder="Giao giờ hành chính, gọi trước 30 phút..."
                         class="w-full" />
@@ -44,6 +58,7 @@
                   </UButton>
                </template>
             </UCard>
+
             <UCard>
                <template #header>
                   <div class="flex items-center gap-2">
@@ -89,7 +104,7 @@
                      </div>
                      <div class="flex items-center gap-3 flex-1">
                         <div class="w-11 h-11 rounded-xl bg-red-50 flex items-center justify-center text-xl">
-                           <IconsBank/>
+                           <IconsBank />
                         </div>
                         <div>
                            <p class="font-semibold text-gray-900 text-sm">Thanh toán VNPay</p>
@@ -108,7 +123,7 @@
                      </div>
                      <div class="flex items-center gap-3 flex-1">
                         <div class="w-11 h-11 rounded-xl bg-green-50 flex items-center justify-center text-xl">
-                           <IconsMoney/>
+                           <IconsMoney />
                         </div>
                         <div>
                            <p class="font-semibold text-gray-900 text-sm">Tiền mặt khi nhận hàng</p>
@@ -188,6 +203,8 @@
 </template>
 
 <script setup lang="ts">
+import { useAddress } from '~/composables/useAddress'
+
 definePageMeta({ middleware: 'auth' })
 useHead({ title: 'Thanh toán' })
 
@@ -198,8 +215,51 @@ const { api } = useApi()
 const toast = useToast()
 const { formatCurrency } = useFormat()
 
-const selectedItemIds = ref<number[]>([])
+const {
+   provinces,
+   wards,
+   loadingProvinces,
+   loadingWards,
+   fetchProvinces,
+   fetchWards,
+   buildAddressString,
+   parseAddressString,
+} = useAddress()
 
+const addressForm = reactive({
+   provinceCode: null as number | null,
+   provinceName: '',
+   wardCode: null as number | null,
+   wardName: '',
+   street: '',
+})
+
+const provinceOptions = computed(() =>
+   provinces.value.map(p => ({ label: p.name, value: p.code }))
+)
+const wardOptions = computed(() =>
+   wards.value.map(w => ({ label: w.name, value: w.code }))
+)
+
+async function onProvinceChange(code: number) {
+   const province = provinces.value.find(p => p.code === code)
+   addressForm.provinceName = province?.name || ''
+   addressForm.wardCode = null
+   addressForm.wardName = ''
+   await fetchWards(code)
+}
+
+function onWardChange(code: number) {
+   const ward = wards.value.find(w => w.code === code)
+   addressForm.wardCode = code
+   addressForm.wardName = ward?.name || ''
+}
+
+const fullAddress = computed(() =>
+   buildAddressString(addressForm.street, addressForm.wardName, addressForm.provinceName)
+)
+
+const selectedItemIds = ref<number[]>([])
 const checkoutItems = computed(() =>
    cartStore.items.filter(i => selectedItemIds.value.includes(i.id))
 )
@@ -207,7 +267,6 @@ const checkoutItems = computed(() =>
 const form = reactive({
    recipientName: '',
    recipientPhone: '',
-   recipientAddress: '',
    note: '',
    paymentMethod: 'VNPAY' as 'VNPAY' | 'COD',
 })
@@ -226,14 +285,34 @@ const finalAmount = computed(() => Math.max(0, totalAmount.value - discountAmoun
 const canOrder = computed(() =>
    form.recipientName.trim() &&
    form.recipientPhone.trim() &&
-   form.recipientAddress.trim() &&
+   !!addressForm.provinceCode &&
+   !!addressForm.wardCode &&
+   addressForm.street.trim() &&
    checkoutItems.value.length > 0
 )
 
-function fillProfile() {
+async function fillProfile() {
    form.recipientName = authStore.user?.name || ''
    form.recipientPhone = authStore.user?.phone || ''
-   form.recipientAddress = authStore.user?.address || ''
+
+   const userAddress = authStore.user?.address || ''
+   if (!userAddress) return
+
+   const { street, wardName, provinceName } = parseAddressString(userAddress)
+   addressForm.street = street
+
+   const province = provinces.value.find(p => p.name === provinceName)
+   if (province) {
+      addressForm.provinceCode = province.code
+      addressForm.provinceName = province.name
+      await fetchWards(province.code)
+
+      const ward = wards.value.find(w => w.name === wardName)
+      if (ward) {
+         addressForm.wardCode = ward.code
+         addressForm.wardName = ward.name
+      }
+   }
 }
 
 async function validateCoupon() {
@@ -273,7 +352,7 @@ async function placeOrder() {
          couponCode: appliedCoupon.value?.code,
          recipientName: form.recipientName,
          recipientPhone: form.recipientPhone,
-         recipientAddress: form.recipientAddress,
+         recipientAddress: fullAddress.value,
          note: form.note || undefined,
       })
       await cartStore.fetchCart()
@@ -296,13 +375,15 @@ async function placeOrder() {
 }
 
 onMounted(async () => {
-   await cartStore.fetchCart()
+   await Promise.all([cartStore.fetchCart(), fetchProvinces()])
+
    if (import.meta.client) {
       const saved = sessionStorage.getItem('checkout_item_ids')
       selectedItemIds.value = saved
          ? JSON.parse(saved)
          : cartStore.items.map(i => i.id)
    }
-   fillProfile()
+   form.recipientName = authStore.user?.name || ''
+   form.recipientPhone = authStore.user?.phone || ''
 })
 </script>

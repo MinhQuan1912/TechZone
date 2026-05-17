@@ -22,7 +22,7 @@
                <div class="grid grid-cols-2 gap-4 text-sm">
                   <div>
                      <p class="text-gray-400 text-xs font-medium mb-1">Số điện thoại</p>
-                     <p class="text-gray-900">{{ authStore.user?.phone || 'Chưa cập nhật ' }}</p>
+                     <p class="text-gray-900">{{ authStore.user?.phone || 'Chưa cập nhật' }}</p>
                   </div>
                   <div>
                      <p class="text-gray-400 text-xs font-medium mb-1">Tham gia từ</p>
@@ -39,12 +39,28 @@
                <UFormField label="Họ và tên">
                   <UInput v-model="editForm.name" class="w-full" />
                </UFormField>
+
                <UFormField label="Số điện thoại">
                   <UInput v-model="editForm.phone" type="tel" class="w-full" />
                </UFormField>
-               <UFormField label="Địa chỉ">
-                  <UTextarea v-model="editForm.address" :rows="3" class="w-full" />
+
+               <UFormField label="Tỉnh / Thành phố *">
+                  <CommonAddressSelect v-model="addressForm.provinceCode" :items="provinceOptions"
+                     :loading="loadingProvinces" placeholder="Tìm tỉnh / thành phố"
+                     @select="onProvinceChange($event.value)" />
                </UFormField>
+
+               <UFormField label="Phường / Xã *">
+                  <CommonAddressSelect v-model="addressForm.wardCode" :items="wardOptions" :loading="loadingWards"
+                     :disabled="!addressForm.provinceCode" placeholder="Tìm phường / xã"
+                     @select="onWardChange($event.value)" />
+               </UFormField>
+
+               <UFormField label="Địa chỉ (số nhà, tên đường)">
+                  <UTextarea v-model="addressForm.street" placeholder="Ví dụ: 123 Nguyễn Huệ" :rows="2"
+                     class="w-full" />
+               </UFormField>
+
                <div class="flex justify-end gap-3">
                   <UButton color="neutral" variant="outline" @click="editing = false">Hủy</UButton>
                   <UButton type="submit" color="primary" :loading="saving">Lưu thay đổi</UButton>
@@ -63,12 +79,12 @@
 
             <form class="space-y-4" @submit.prevent="changePass">
                <UFormField v-if="hasPassword" label="Mật khẩu hiện tại">
-                  <UInput v-model="passForm.current" :type="showPass ? 'text' : 'password'" class="w-full" :trailing-icon="showPass ? 'i-heroicons-eye-slash' : 'i-heroicons-eye'" >
+                  <UInput v-model="passForm.current" :type="showPass ? 'text' : 'password'" class="w-full">
                      <template #trailing>
-                            <button type="button" @click="showPass = !showPass">
-                                <UIcon :name="showPass ? 'i-heroicons-eye-slash' : 'i-heroicons-eye'" />
-                            </button>
-                        </template>
+                        <button type="button" @click="showPass = !showPass">
+                           <UIcon :name="showPass ? 'i-heroicons-eye-slash' : 'i-heroicons-eye'" />
+                        </button>
+                     </template>
                   </UInput>
                </UFormField>
                <UFormField label="Mật khẩu mới">
@@ -89,14 +105,27 @@
 </template>
 
 <script setup lang="ts">
+import { useAddress } from '~/composables/useAddress'
+
+
 definePageMeta({ middleware: 'auth' })
 useHead({ title: 'Thông tin cá nhân' })
 
 const authStore = useAuthStore()
-const orderStore = useOrderStore()
 const { api } = useApi()
 const toast = useToast()
 const { formatDateShort } = useFormat()
+const {
+   provinces,
+   wards,
+   loadingProvinces,
+   loadingWards,
+   fetchProvinces,
+   fetchWards,
+   buildAddressString,
+   parseAddressString,
+} = useAddress()
+
 const showPass = ref(false)
 const editing = ref(false)
 const saving = ref(false)
@@ -106,45 +135,80 @@ const hasPassword = ref(true)
 const editForm = reactive({
    name: authStore.user?.name || '',
    phone: authStore.user?.phone || '',
-   address: authStore.user?.address || '',
+})
+
+const addressForm = reactive({
+   provinceCode: null as number | null,
+   provinceName: '',
+   wardCode: null as number | null,
+   wardName: '',
+   street: '',
 })
 
 const passForm = reactive({ current: '', newPass: '', confirm: '' })
 
-const orderStats = computed(() => [
-   {
-      label: 'Chờ xác nhận',
-      count: orderStore.items.filter(o => o.status === 'PENDING').length,
-      color: 'text-yellow-500',
-   },
-   {
-      label: 'Đang giao',
-      count: orderStore.items.filter(o => o.status === 'SHIPPING').length,
-      color: 'text-blue-500',
-   },
-   {
-      label: 'Đã giao',
-      count: orderStore.items.filter(o => o.status === 'DELIVERED').length,
-      color: 'text-green-500',
-   },
-])
+const provinceOptions = computed(() =>
+   provinces.value.map(p => ({ label: p.name, value: p.code }))
+)
+const wardOptions = computed(() =>
+   wards.value.map(w => ({ label: w.name, value: w.code }))
+)
 
-function toggleEdit() {
+async function onProvinceChange(code: number) {
+   const province = provinces.value.find(p => p.code === code)
+   addressForm.provinceName = province?.name || ''
+   addressForm.wardCode = null
+   addressForm.wardName = ''
+   await fetchWards(code)
+}
+
+function onWardChange(code: number) {
+   const ward = wards.value.find(w => w.code === code)
+   addressForm.wardCode = code
+   addressForm.wardName = ward?.name || ''
+}
+
+async function toggleEdit() {
    editing.value = !editing.value
-   if (editing.value) {
-      editForm.name = authStore.user?.name || ''
-      editForm.phone = authStore.user?.phone || ''
-      editForm.address = authStore.user?.address || ''
+   if (!editing.value) return
+
+   editForm.name = authStore.user?.name || ''
+   editForm.phone = authStore.user?.phone || ''
+
+   await fetchProvinces()
+
+   const currentAddress = authStore.user?.address || ''
+   if (!currentAddress) return
+
+   const { street, wardName, provinceName } = parseAddressString(currentAddress)
+   addressForm.street = street
+
+   const province = provinces.value.find(p => p.name === provinceName)
+   if (!province) return
+
+   addressForm.provinceCode = province.code
+   addressForm.provinceName = province.name
+   await fetchWards(province.code)
+
+   const ward = wards.value.find(w => w.name === wardName)
+   if (ward) {
+      addressForm.wardCode = ward.code
+      addressForm.wardName = ward.name
    }
 }
 
 async function saveProfile() {
    saving.value = true
    try {
+      const address = buildAddressString(
+         addressForm.street,
+         addressForm.wardName,
+         addressForm.provinceName,
+      )
       await authStore.updateProfile({
          name: editForm.name,
          phone: editForm.phone,
-         address: editForm.address,
+         address,
       })
       toast.add({ title: 'Cập nhật thành công', color: 'success' })
       editing.value = false
@@ -181,9 +245,4 @@ async function changePass() {
    }
 }
 
-onMounted(async () => {
-   await Promise.all([
-      orderStore.fetchMyOrders(),
-   ])
-})
 </script>
