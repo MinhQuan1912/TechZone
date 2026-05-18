@@ -66,6 +66,7 @@
                      <h3 class="font-semibold">Mã giảm giá</h3>
                   </div>
                </template>
+
                <div v-if="appliedCoupon"
                   class="flex items-center justify-between p-3 bg-green-50 rounded-xl border border-green-200">
                   <div class="flex items-center gap-2">
@@ -77,55 +78,54 @@
                   </div>
                   <UButton size="xs" color="error" variant="ghost" icon="i-heroicons-x-mark" @click="removeCoupon" />
                </div>
-               <div v-else class="space-y-3">
-                  <div class="flex gap-2">
-                     <UInput v-model="couponInput" placeholder="Nhập hoặc chọn mã giảm giá" class="flex-1"
-                        :disabled="validatingCoupon" @keyup.enter="validateCoupon" @input="filterCoupons" />
-                     <UButton color="primary" variant="outline" :loading="validatingCoupon"
-                        :disabled="!couponInput.trim()" @click="validateCoupon">
-                        Áp dụng
-                     </UButton>
-                  </div>
-                  <div v-if="loadingCoupons" class="flex items-center justify-center py-4 gap-2 text-gray-400 text-sm">
-                     <UIcon name="i-heroicons-arrow-path" class="animate-spin w-4 h-4" />
-                     Đang tải mã giảm giá...
-                  </div>
-                  <div v-else-if="filteredCoupons.length > 0" class="space-y-2 max-h-56 overflow-y-auto pr-0.5">
-                     <button v-for="coupon in filteredCoupons" :key="coupon.id" type="button" class="w-full text-left p-3 rounded-xl border border-dashed border-primary-200 bg-primary-50
-               hover:border-primary-400 hover:bg-primary-100 transition-all group" @click="selectCoupon(coupon)">
-                        <div class="flex items-center justify-between">
-                           <div class="flex items-center gap-2">
-                              <UIcon name="i-heroicons-ticket" class="text-primary-500 w-4 h-4 shrink-0" />
-                              <span class="font-mono font-bold text-primary-700 text-sm tracking-wide">
-                                 {{ coupon.code }}
+
+               <div v-else class="flex gap-2">
+                  <div class="relative flex-1" ref="couponContainerRef">
+                     <UInput v-model="couponInput" placeholder="Nhập hoặc chọn mã giảm giá" class="w-full"
+                        autocomplete="off" :disabled="validatingCoupon" @focus="couponOpen = true"
+                        @input="couponOpen = true" @keyup.enter="validateCoupon" />
+                     <div v-if="couponOpen && !loadingCoupons && filteredCoupons.length > 0"
+                        class="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg max-h-64 overflow-y-auto">
+                        <button v-for="coupon in filteredCoupons" :key="coupon.id" type="button"
+                           class="w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-0"
+                           @mousedown.prevent="selectCoupon(coupon)">
+
+                           <div class="flex items-center justify-between">
+                              <span class="font-mono font-bold text-sm text-primary-700">{{ coupon.code }}</span>
+                              <span class="text-xs font-semibold text-green-600">
+                                 -{{ formatCurrency(coupon.previewDiscount) }}
                               </span>
                            </div>
-                           <span class="text-xs font-bold text-green-600 bg-green-100 px-2 py-0.5 rounded-full">
-                              -{{ formatCurrency(coupon.previewDiscount) }}
-                           </span>
-                        </div>
-                        <p v-if="coupon.description" class="text-xs text-gray-500 mt-1 pl-6 line-clamp-1">
-                           {{ coupon.description }}
-                        </p>
-                        <div class="flex items-center gap-3 mt-1 pl-6">
-                           <span class="text-xs text-gray-400">
+
+                           <p v-if="coupon.description" class="text-xs text-gray-400 mt-0.5 truncate">
+                              {{ coupon.description }}
+                           </p>
+
+                           <p class="text-xs text-gray-400 mt-0.5">
                               HSD: {{ formatDate(coupon.endDate) }}
-                           </span>
-                           <span v-if="coupon.minOrderAmount > 0" class="text-xs text-gray-400">
-                              · Đơn tối thiểu {{ formatCurrency(coupon.minOrderAmount) }}
-                           </span>
-                        </div>
-                     </button>
+                              <span v-if="coupon.minOrderAmount > 0">
+                                 · Tối thiểu {{ formatCurrency(coupon.minOrderAmount) }}
+                              </span>
+                           </p>
+                        </button>
+                     </div>
+
+                     <div v-if="couponOpen && loadingCoupons"
+                        class="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg px-4 py-3 text-sm text-gray-400 flex items-center gap-2">
+                        <UIcon name="i-heroicons-arrow-path" class="animate-spin w-4 h-4" />
+                        Đang tải...
+                     </div>
+
+                     <div v-if="couponOpen && !loadingCoupons && couponInput && filteredCoupons.length === 0"
+                        class="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg px-4 py-3 text-sm text-gray-400">
+                        Không tìm thấy mã "{{ couponInput }}" — nhấn Áp dụng để kiểm tra
+                     </div>
                   </div>
-                  <div v-else-if="!loadingCoupons && availableCoupons.length === 0"
-                     class="text-center py-3 text-xs text-gray-400">
-                     <UIcon name="i-heroicons-tag" class="w-5 h-5 mx-auto mb-1 text-gray-300" />
-                     Không có mã giảm giá khả dụng
-                  </div>
-                  <div v-else-if="!loadingCoupons && filteredCoupons.length === 0 && couponInput.trim()"
-                     class="text-center py-2 text-xs text-gray-400">
-                     Không tìm thấy mã "{{ couponInput }}" — nhấn Áp dụng để kiểm tra thủ công
-                  </div>
+
+                  <UButton color="primary" variant="outline" :loading="validatingCoupon" :disabled="!couponInput.trim()"
+                     @click="validateCoupon">
+                     Áp dụng
+                  </UButton>
                </div>
             </UCard>
 
@@ -262,8 +262,9 @@ const discountAmount = ref(0)
 const validatingCoupon = ref(false)
 const placing = ref(false)
 const availableCoupons = ref<any[]>([])
-const filteredCoupons = ref<any[]>([])
 const loadingCoupons = ref(false)
+const couponContainerRef = ref<HTMLElement>()
+const couponOpen = ref(false)
 
 const {
    provinces,
@@ -321,8 +322,6 @@ const form = reactive({
    paymentMethod: 'VNPAY' as 'VNPAY' | 'COD',
 })
 
-
-
 const totalAmount = computed(() =>
    checkoutItems.value.reduce((s, i) => s + i.variant.salePrice * i.quantity, 0)
 )
@@ -364,6 +363,7 @@ async function fillProfile() {
 async function validateCoupon() {
    if (!couponInput.value.trim()) return
    validatingCoupon.value = true
+   couponOpen.value = false
    try {
       const res = await api<any>('/coupons/validate', {
          method: 'POST',
@@ -386,33 +386,35 @@ function removeCoupon() {
    appliedCoupon.value = null
    discountAmount.value = 0
    couponInput.value = ''
-   filterCoupons()
 }
 
-function filterCoupons() {
-   const q = couponInput.value.trim().toUpperCase()
-   filteredCoupons.value = q
-      ? availableCoupons.value.filter(
-         (c) => c.code.includes(q) || c.description?.toUpperCase().includes(q),
-      )
-      : availableCoupons.value
-}
+const filteredCoupons = computed(() => {
+   if (!couponInput.value) return availableCoupons.value
+   const q = couponInput.value.toUpperCase().trim()
+   return availableCoupons.value.filter(c =>
+      c.code.includes(q) || c.description?.toUpperCase().includes(q)
+   )
+})
 
 async function selectCoupon(coupon: any) {
    couponInput.value = coupon.code
+   couponOpen.value = false
    await validateCoupon()
 }
 
+function handleCouponOutsideClick(e: MouseEvent) {
+   if (!couponContainerRef.value?.contains(e.target as Node)) {
+      couponOpen.value = false
+   }
+}
 async function fetchAvailableCoupons() {
    if (!totalAmount.value) return
    loadingCoupons.value = true
    try {
       const res = await api<any[]>(`/coupons/available?amount=${totalAmount.value}`)
       availableCoupons.value = Array.isArray(res) ? res : []
-      filteredCoupons.value = availableCoupons.value
    } catch {
       availableCoupons.value = []
-      filteredCoupons.value = []
    } finally {
       loadingCoupons.value = false
    }
@@ -451,6 +453,7 @@ async function placeOrder() {
 }
 
 onMounted(async () => {
+   document.addEventListener('mousedown', handleCouponOutsideClick)
    await fetchProvinces()
 
    if (!cartStore.isFetched) {
@@ -466,5 +469,9 @@ onMounted(async () => {
    await fetchAvailableCoupons()
    form.recipientName = authStore.user?.name || ''
    form.recipientPhone = authStore.user?.phone || ''
+})
+
+onUnmounted(() => {
+   document.removeEventListener('mousedown', handleCouponOutsideClick) 
 })
 </script>
