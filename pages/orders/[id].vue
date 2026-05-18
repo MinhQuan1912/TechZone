@@ -52,7 +52,8 @@
                <div v-for="item in store.current.items" :key="item.id"
                   class="flex items-center gap-4 p-3 rounded-xl hover:bg-gray-50">
                   <div class="w-14 h-14 bg-gray-100 rounded-xl flex items-center justify-center shrink-0">
-                    <img v-if="item.variant?.imageUrl" :src="item.variant.imageUrl" alt="Product Image" class="w-full h-full object-cover rounded-xl" />
+                     <img v-if="item.variant?.imageUrl" :src="item.variant.imageUrl" alt="Product Image"
+                        class="w-full h-full object-cover rounded-xl" />
                   </div>
                   <div class="flex-1 min-w-0">
                      <p class="font-medium text-sm text-gray-900">{{ item.product?.name }}</p>
@@ -112,8 +113,18 @@
                      <span>{{ formatCurrency(store.current.totalAmount) }}</span>
                   </div>
                   <div v-if="store.current.discountAmount > 0" class="flex justify-between text-green-600">
-                     <span>Giảm giá <span v-if="store.current.coupon">({{ store.current.coupon.code }})</span>:</span>
+                     <span>
+                        Giảm giá
+                        <span v-if="store.current.coupon"
+                           class="font-mono text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded ml-1">
+                           {{ store.current.coupon.code }}
+                        </span>:
+                     </span>
                      <span>-{{ formatCurrency(store.current.discountAmount) }}</span>
+                  </div>
+                  <div class="flex justify-between text-gray-500">
+                     <span>Phí vận chuyển:</span>
+                     <span class="text-green-600 font-medium">Miễn phí</span>
                   </div>
                   <USeparator />
                   <div class="flex justify-between font-bold text-base">

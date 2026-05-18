@@ -11,8 +11,8 @@
          <div class="w-10 h-10 border-4 border-primary-500 border-t-transparent rounded-full animate-spin mx-auto" />
       </div>
 
-      <CommonAppEmpty v-else-if="cartStore.isFetched && cartStore.items.length === 0" icon="i-heroicons-shopping-cart" title="Giỏ hàng trống"
-         description="Thêm sản phẩm vào giỏ để tiếp tục mua sắm" action-label="Tiếp tục mua sắm"
+      <CommonAppEmpty v-else-if="cartStore.isFetched && cartStore.items.length === 0" icon="i-heroicons-shopping-cart"
+         title="Giỏ hàng trống" description="Thêm sản phẩm vào giỏ để tiếp tục mua sắm" action-label="Tiếp tục mua sắm"
          action-to="/products" />
 
       <div v-else class="grid lg:grid-cols-3 gap-6">
@@ -76,8 +76,7 @@
                </div>
 
                <div class="flex flex-col items-end justify-between">
-                  <button class="text-gray-300 hover:text-red-500 transition-colors"
-                     @click="removeSingleItem(item.id)">
+                  <button class="text-gray-300 hover:text-red-500 transition-colors" @click="removeSingleItem(item.id)">
                      <UIcon name="i-heroicons-x-mark" class="w-5 h-5" />
                   </button>
                   <span class="font-bold text-gray-900 text-sm">
@@ -112,7 +111,7 @@
                <template #footer>
                   <UButton color="primary" size="lg" class="w-full font-bold" :disabled="selectedIds.length === 0"
                      to="/checkout" @click="saveCheckoutItems">
-                     Thanh toán 
+                     Thanh toán
                   </UButton>
                </template>
             </UCard>
@@ -167,7 +166,9 @@ async function removeSingleItem(id: number) {
    selectAll.value = selectedIds.value.length === cartStore.items.length
 }
 onMounted(async () => {
-   await cartStore.fetchCart()
+   if (!cartStore.isFetched) {
+      await cartStore.fetchCart()
+   }
    selectedIds.value = cartStore.items.map(i => i.id)
    selectAll.value = true
 })

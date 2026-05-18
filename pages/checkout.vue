@@ -77,13 +77,55 @@
                   </div>
                   <UButton size="xs" color="error" variant="ghost" icon="i-heroicons-x-mark" @click="removeCoupon" />
                </div>
-               <div v-else class="flex gap-2">
-                  <UInput v-model="couponInput" placeholder="Nhập mã giảm giá" class="flex-1"
-                     :disabled="validatingCoupon" @keyup.enter="validateCoupon" />
-                  <UButton color="primary" variant="outline" :loading="validatingCoupon" :disabled="!couponInput.trim()"
-                     @click="validateCoupon">
-                     Áp dụng
-                  </UButton>
+               <div v-else class="space-y-3">
+                  <div class="flex gap-2">
+                     <UInput v-model="couponInput" placeholder="Nhập hoặc chọn mã giảm giá" class="flex-1"
+                        :disabled="validatingCoupon" @keyup.enter="validateCoupon" @input="filterCoupons" />
+                     <UButton color="primary" variant="outline" :loading="validatingCoupon"
+                        :disabled="!couponInput.trim()" @click="validateCoupon">
+                        Áp dụng
+                     </UButton>
+                  </div>
+                  <div v-if="loadingCoupons" class="flex items-center justify-center py-4 gap-2 text-gray-400 text-sm">
+                     <UIcon name="i-heroicons-arrow-path" class="animate-spin w-4 h-4" />
+                     Đang tải mã giảm giá...
+                  </div>
+                  <div v-else-if="filteredCoupons.length > 0" class="space-y-2 max-h-56 overflow-y-auto pr-0.5">
+                     <button v-for="coupon in filteredCoupons" :key="coupon.id" type="button" class="w-full text-left p-3 rounded-xl border border-dashed border-primary-200 bg-primary-50
+               hover:border-primary-400 hover:bg-primary-100 transition-all group" @click="selectCoupon(coupon)">
+                        <div class="flex items-center justify-between">
+                           <div class="flex items-center gap-2">
+                              <UIcon name="i-heroicons-ticket" class="text-primary-500 w-4 h-4 shrink-0" />
+                              <span class="font-mono font-bold text-primary-700 text-sm tracking-wide">
+                                 {{ coupon.code }}
+                              </span>
+                           </div>
+                           <span class="text-xs font-bold text-green-600 bg-green-100 px-2 py-0.5 rounded-full">
+                              -{{ formatCurrency(coupon.previewDiscount) }}
+                           </span>
+                        </div>
+                        <p v-if="coupon.description" class="text-xs text-gray-500 mt-1 pl-6 line-clamp-1">
+                           {{ coupon.description }}
+                        </p>
+                        <div class="flex items-center gap-3 mt-1 pl-6">
+                           <span class="text-xs text-gray-400">
+                              HSD: {{ formatDate(coupon.endDate) }}
+                           </span>
+                           <span v-if="coupon.minOrderAmount > 0" class="text-xs text-gray-400">
+                              · Đơn tối thiểu {{ formatCurrency(coupon.minOrderAmount) }}
+                           </span>
+                        </div>
+                     </button>
+                  </div>
+                  <div v-else-if="!loadingCoupons && availableCoupons.length === 0"
+                     class="text-center py-3 text-xs text-gray-400">
+                     <UIcon name="i-heroicons-tag" class="w-5 h-5 mx-auto mb-1 text-gray-300" />
+                     Không có mã giảm giá khả dụng
+                  </div>
+                  <div v-else-if="!loadingCoupons && filteredCoupons.length === 0 && couponInput.trim()"
+                     class="text-center py-2 text-xs text-gray-400">
+                     Không tìm thấy mã "{{ couponInput }}" — nhấn Áp dụng để kiểm tra thủ công
+                  </div>
                </div>
             </UCard>
 
@@ -213,7 +255,15 @@ const cartStore = useCartStore()
 const orderStore = useOrderStore()
 const { api } = useApi()
 const toast = useToast()
-const { formatCurrency } = useFormat()
+const { formatCurrency, formatDate } = useFormat()
+const couponInput = ref('')
+const appliedCoupon = ref<any>(null)
+const discountAmount = ref(0)
+const validatingCoupon = ref(false)
+const placing = ref(false)
+const availableCoupons = ref<any[]>([])
+const filteredCoupons = ref<any[]>([])
+const loadingCoupons = ref(false)
 
 const {
    provinces,
@@ -271,11 +321,7 @@ const form = reactive({
    paymentMethod: 'VNPAY' as 'VNPAY' | 'COD',
 })
 
-const couponInput = ref('')
-const appliedCoupon = ref<any>(null)
-const discountAmount = ref(0)
-const validatingCoupon = ref(false)
-const placing = ref(false)
+
 
 const totalAmount = computed(() =>
    checkoutItems.value.reduce((s, i) => s + i.variant.salePrice * i.quantity, 0)
@@ -340,6 +386,36 @@ function removeCoupon() {
    appliedCoupon.value = null
    discountAmount.value = 0
    couponInput.value = ''
+   filterCoupons()
+}
+
+function filterCoupons() {
+   const q = couponInput.value.trim().toUpperCase()
+   filteredCoupons.value = q
+      ? availableCoupons.value.filter(
+         (c) => c.code.includes(q) || c.description?.toUpperCase().includes(q),
+      )
+      : availableCoupons.value
+}
+
+async function selectCoupon(coupon: any) {
+   couponInput.value = coupon.code
+   await validateCoupon()
+}
+
+async function fetchAvailableCoupons() {
+   if (!totalAmount.value) return
+   loadingCoupons.value = true
+   try {
+      const res = await api<any[]>(`/coupons/available?amount=${totalAmount.value}`)
+      availableCoupons.value = Array.isArray(res) ? res : []
+      filteredCoupons.value = availableCoupons.value
+   } catch {
+      availableCoupons.value = []
+      filteredCoupons.value = []
+   } finally {
+      loadingCoupons.value = false
+   }
 }
 
 async function placeOrder() {
@@ -375,7 +451,11 @@ async function placeOrder() {
 }
 
 onMounted(async () => {
-   await Promise.all([cartStore.fetchCart(), fetchProvinces()])
+   await fetchProvinces()
+
+   if (!cartStore.isFetched) {
+      await cartStore.fetchCart()
+   }
 
    if (import.meta.client) {
       const saved = sessionStorage.getItem('checkout_item_ids')
@@ -383,6 +463,7 @@ onMounted(async () => {
          ? JSON.parse(saved)
          : cartStore.items.map(i => i.id)
    }
+   await fetchAvailableCoupons()
    form.recipientName = authStore.user?.name || ''
    form.recipientPhone = authStore.user?.phone || ''
 })

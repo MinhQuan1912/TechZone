@@ -47,7 +47,7 @@
 
       <UModal v-model:open="confirmClearOpen">
          <template #content>
-           <UCard>
+            <UCard>
                <template #header>
                   <h3 class="font-semibold text-gray-900">Xóa tất cả yêu thích?</h3>
                </template>
@@ -97,7 +97,10 @@ async function clearAll() {
       clearing.value = false
    }
 }
+
 onMounted(async () => {
-   await wishlistStore.fetchWishlist()
+   if (wishlistStore.items.length === 0) {
+      await wishlistStore.fetchWishlist()
+   }
 })
 </script>

@@ -7,16 +7,15 @@
             </div>
             <form @submit.prevent="handleLogin" class="flex flex-col gap-6">
                 <UFormField label="Email hoặc tên đăng nhập">
-                    <UInput v-model="form.emailOrUsername"
-                        icon="i-heroicons-user-circle" class="w-full" size="xl" :disabled="loading"
-                        autocomplete="username" />
+                    <UInput v-model="form.emailOrUsername" icon="i-heroicons-user-circle" class="w-full" size="xl"
+                        :disabled="loading" autocomplete="username" />
                 </UFormField>
                 <UFormField label="Mật khẩu">
                     <UInput v-model="form.password" :type="showPass ? 'text' : 'password'"
                         icon="i-heroicons-lock-closed" class="w-full" size="xl" :disabled="loading"
                         :trailing-icon="showPass ? 'i-heroicons-eye-slash' : 'i-heroicons-eye'"
-                        @click:trailing="showPass = !showPass" >
-                       <template #trailing>
+                        @click:trailing="showPass = !showPass">
+                        <template #trailing>
                             <button type="button" @click="showPass = !showPass">
                                 <UIcon :name="showPass ? 'i-heroicons-eye-slash' : 'i-heroicons-eye'" />
                             </button>
@@ -32,7 +31,8 @@
                 <NuxtLink to="/sign-up" class=" text-gray-500 hover:text-secondary-02">
                     Chưa có tài khoản? Đăng ký
                 </NuxtLink>
-                <NuxtLink to="/forgot-password" class="text-secondary-02 leading-6 hover:text-black">Quên mật khẩu?</NuxtLink>
+                <NuxtLink to="/forgot-password" class="text-secondary-02 leading-6 hover:text-black">Quên mật khẩu?
+                </NuxtLink>
             </div>
             <button
                 class="h-14 px-12 bg-secondary-02 flex justify-center items-center font-medium leading-6 text-text rounded-sm hover:bg-secondary hover:text-secondary-02 hover:shadow-lg transition-colors duration-300 ease"
@@ -44,7 +44,7 @@
                 <span class="text-xs text-gray-400 font-medium">HOẶC</span>
                 <div class="flex-1 h-px bg-gray-200" />
             </div>
-            
+
             <div>
                 <div id="google-login-btn"></div>
                 <div v-if="googleAuth.loading.value"
@@ -85,7 +85,6 @@ async function handleLogin() {
     loading.value = true
     try {
         await authStore.login(form.emailOrUsername, form.password)
-        await Promise.all([cartStore.fetchCart(), wishlistStore.fetchWishlist()])
         toast.add({ title: 'Đăng nhập thành công!', color: 'success' })
         const redirect = route.query.redirect as string
         await navigateTo(redirect || '/')
@@ -98,7 +97,6 @@ async function handleLogin() {
 
 onMounted(() => {
     googleAuth.initGoogleButton('google-login-btn', async () => {
-        await Promise.all([cartStore.fetchCart(), wishlistStore.fetchWishlist()])
         const redirect = route.query.redirect as string
         await navigateTo(redirect || '/')
     })
