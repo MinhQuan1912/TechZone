@@ -8,6 +8,7 @@
       <div v-if="store.loading" class="text-center py-20">
          <div class="w-10 h-10 border-4 border-primary-500 border-t-transparent rounded-full animate-spin mx-auto" />
       </div>
+
       <div v-else-if="store.current" class="space-y-5">
          <UCard>
             <div class="flex items-center justify-between flex-wrap gap-3 mb-4">
@@ -48,30 +49,109 @@
             <template #header>
                <h3 class="font-semibold">Sản phẩm</h3>
             </template>
-            <div class="space-y-4">
-               <div v-for="item in store.current.items" :key="item.id"
-                  class="flex items-center gap-4 p-3 rounded-xl hover:bg-gray-50">
-                  <div class="w-14 h-14 bg-gray-100 rounded-xl flex items-center justify-center shrink-0">
-                     <img v-if="item.variant?.imageUrl" :src="item.variant.imageUrl" alt="Product Image"
-                        class="w-full h-full object-cover rounded-xl" />
-                  </div>
-                  <div class="flex-1 min-w-0">
-                     <p class="font-medium text-sm text-gray-900">{{ item.product?.name }}</p>
-                     <p class="text-xs text-gray-400 mt-0.5">
-                        {{ [item.variant?.color, item.variant?.storage, item.variant?.ram].filter(Boolean).join(' / ')
-                        }}
-                     </p>
-                     <p class="text-xs text-gray-400">x{{ item.quantity }}</p>
-                  </div>
-                  <div class="text-right">
-                     <p class="font-bold text-gray-900 text-sm">
-                        {{ formatCurrency(item.price * item.quantity) }}
-                     </p>
-                     <p class="text-xs text-gray-400">{{ formatCurrency(item.price) }}/cái</p>
+            <div class="divide-y divide-gray-100">
+               <div v-for="item in store.current.items" :key="item.id" class="py-4 first:pt-0 last:pb-0">
+                  <NuxtLink :to="`/products/${item.product?.slug}`"
+                     class="flex items-center gap-4 p-3 rounded-xl hover:bg-gray-50 transition-colors group">
+                     <div
+                        class="w-14 h-14 bg-gray-100 rounded-xl flex items-center justify-center shrink-0 overflow-hidden">
+                        <img v-if="item.variant?.imageUrl || item.product?.images?.[0]?.url"
+                           :src="item.variant?.imageUrl || item.product?.images?.[0]?.url"
+                           class="w-full h-full object-cover" />
+                        <UIcon v-else name="i-heroicons-photo" class="w-6 h-6 text-gray-300" />
+                     </div>
+                     <div class="flex-1 min-w-0">
+                        <p class="font-medium text-sm text-gray-900 group-hover:text-primary-600 transition-colors">
+                           {{ item.product?.name }}
+                        </p>
+                        <p class="text-xs text-gray-400 mt-0.5">
+                           {{ [item.variant?.color, item.variant?.storage, item.variant?.ram].filter(Boolean).join(' /')
+                           }}
+                        </p>
+                        <p class="text-xs text-gray-400">x{{ item.quantity }}</p>
+                     </div>
+                     <div class="text-right shrink-0">
+                        <p class="font-bold text-gray-900 text-sm">
+                           {{ formatCurrency(item.price * item.quantity) }}
+                        </p>
+                        <p class="text-xs text-gray-400">{{ formatCurrency(item.price) }}/cái</p>
+                     </div>
+                  </NuxtLink>
+
+                  <div v-if="store.current.status === 'DELIVERED'" class="mt-3 ml-3">
+                     <div v-if="reviews[item.product.id]" class="bg-gray-50 rounded-xl p-3">
+                        <div class="flex items-start justify-between gap-2">
+                           <div class="flex-1">
+                              <div class="flex items-center gap-1 mb-1">
+                                 <UIcon v-for="s in 5" :key="s" name="i-heroicons-star-solid" class="w-3.5 h-3.5"
+                                    :class="s <= reviews[item.product.id].rating ? 'text-yellow-400' : 'text-gray-200'" />
+                              </div>
+                              <p class="text-sm text-gray-700">{{ reviews[item.product.id].content }}</p>
+                           </div>
+                           <UButton size="xs" color="neutral" variant="ghost" icon="i-heroicons-pencil-square"
+                              @click="startEdit(item.product.id)" />
+                        </div>
+
+                        <div v-if="editingProductId === item.product.id"
+                           class="mt-3 space-y-2 border-t border-gray-200 pt-3">
+                           <div class="flex items-center gap-1">
+                              <button v-for="s in 5" :key="s" type="button"
+                                 @click="getEditForm(item.product.id).rating = s">
+                                 <UIcon name="i-heroicons-star-solid" class="w-5 h-5 transition-colors"
+                                    :class="s <= getEditForm(item.product.id).rating ? 'text-yellow-400' : 'text-gray-200 hover:text-yellow-300'" />
+                              </button>
+                           </div>
+                           <UTextarea v-model="getEditForm(item.product.id).content" placeholder="Nội dung đánh giá..."
+                              :rows="2" class="w-full" />
+                           <div class="flex gap-2 justify-end">
+                              <UButton size="xs" color="neutral" variant="ghost" @click="cancelEdit">
+                                 Hủy
+                              </UButton>
+                              <UButton size="xs" color="primary" :loading="savingProductId === item.product.id"
+                                 :disabled="!getEditForm(item.product.id).content.trim()"
+                                 @click="submitEdit(item.product.id, reviews[item.product.id].id)">
+                                 Lưu
+                              </UButton>
+                           </div>
+                        </div>
+                     </div>
+
+                     <div v-else>
+                        <div v-if="openReviewProductId !== item.product.id">
+                           <UButton size="xs" color="primary" variant="soft" icon="i-heroicons-star"
+                              @click="openReviewForm(item.product.id)">
+                              Đánh giá sản phẩm
+                           </UButton>
+                        </div>
+
+                        <div v-else class="bg-primary-50 rounded-xl p-3 space-y-2">
+                           <p class="text-xs font-medium text-primary-700">Đánh giá của bạn</p>
+                           <div class="flex items-center gap-1">
+                              <button v-for="s in 5" :key="s" type="button"
+                                 @click="getNewForm(item.product.id).rating = s">
+                                 <UIcon name="i-heroicons-star-solid" class="w-5 h-5 transition-colors"
+                                    :class="s <= getNewForm(item.product.id).rating ? 'text-yellow-400' : 'text-gray-200 hover:text-yellow-300'" />
+                              </button>
+                           </div>
+                           <UTextarea v-model="getNewForm(item.product.id).content"
+                              placeholder="Chia sẻ trải nghiệm của bạn về sản phẩm này..." :rows="2" class="w-full" />
+                           <div class="flex gap-2 justify-end">
+                              <UButton size="xs" color="neutral" variant="ghost" @click="openReviewProductId = null">
+                                 Hủy
+                              </UButton>
+                              <UButton size="xs" color="primary" :loading="savingProductId === item.product.id"
+                                 :disabled="!getNewForm(item.product.id).rating || !getNewForm(item.product.id).content.trim()"
+                                 @click="submitNew(item.product.id)">
+                                 Gửi đánh giá
+                              </UButton>
+                           </div>
+                        </div>
+                     </div>
                   </div>
                </div>
             </div>
          </UCard>
+
          <div class="grid md:grid-cols-2 gap-4">
             <UCard>
                <template #header>
@@ -113,17 +193,17 @@
                      <span>{{ formatCurrency(store.current.totalAmount) }}</span>
                   </div>
                   <div v-if="store.current.discountAmount > 0" class="flex justify-between text-green-600">
-                     <span>
+                     <span class="flex items-center gap-1">
                         Giảm giá
                         <span v-if="store.current.coupon"
-                           class="font-mono text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded ml-1">
+                           class="font-mono text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded">
                            {{ store.current.coupon.code }}
                         </span>:
                      </span>
                      <span>-{{ formatCurrency(store.current.discountAmount) }}</span>
                   </div>
-                  <div class="flex justify-between text-gray-500">
-                     <span>Phí vận chuyển:</span>
+                  <div class="flex justify-between">
+                     <span class="text-gray-500">Phí vận chuyển:</span>
                      <span class="text-green-600 font-medium">Miễn phí</span>
                   </div>
                   <USeparator />
@@ -140,6 +220,7 @@
                </div>
             </UCard>
          </div>
+
          <div class="flex gap-3 justify-end">
             <UButton
                v-if="store.current.paymentMethod === 'COD' && ['PENDING', 'CONFIRMED'].includes(store.current.status)"
@@ -161,6 +242,8 @@ definePageMeta({ middleware: 'auth' })
 
 const route = useRoute()
 const store = useOrderStore()
+const { api } = useApi()
+const toast = useToast()
 const { formatCurrency, formatDate } = useFormat()
 const orderId = Number(route.params.id)
 const cancelling = ref(false)
@@ -201,5 +284,107 @@ async function handleCancel() {
    }
 }
 
-onMounted(() => store.fetchOne(orderId))
+const reviews = ref<Record<number, any>>({})
+const newForms = ref<Record<number, { rating: number; content: string }>>({})
+const editForms = ref<Record<number, { rating: number; content: string }>>({})
+
+const openReviewProductId = ref<number | null>(null)
+const editingProductId = ref<number | null>(null)
+const savingProductId = ref<number | null>(null)
+
+async function fetchReviews() {
+   if (store.current?.status !== 'DELIVERED') return
+   const productIds = store.current.items.map(i => i.product.id)
+   await Promise.all(
+      productIds.map(async (pid) => {
+         try {
+            const res = await api<any>(`/reviews/my/${pid}`)
+            reviews.value[pid] = res
+         } catch {
+            reviews.value[pid] = null
+         }
+      })
+   )
+}
+
+function openReviewForm(productId: number) {
+   openReviewProductId.value = productId
+   newForms.value[productId] = { rating: 0, content: '' }
+}
+
+function startEdit(productId: number) {
+   const r = reviews.value[productId]
+   if (!r) return
+   editForms.value[productId] = { rating: r.rating, content: r.content }
+   editingProductId.value = productId
+}
+
+function getNewForm(productId: number) {
+   if (!newForms.value[productId]) {
+      newForms.value[productId] = { rating: 0, content: '' }
+   }
+   return newForms.value[productId]
+}
+
+function getEditForm(productId: number) {
+   if (!editForms.value[productId]) {
+      editForms.value[productId] = { rating: 0, content: '' }
+   }
+   return editForms.value[productId]
+}
+
+function cancelEdit() {
+   editingProductId.value = null
+}
+
+async function submitNew(productId: number) {
+   const form = newForms.value[productId]
+   if (!form?.rating || !form?.content?.trim()) return
+   savingProductId.value = productId
+   try {
+      const res = await api<any>('/reviews', {
+         method: 'POST',
+         body: { productId, rating: form.rating, content: form.content.trim() },
+      })
+      reviews.value[productId] = res
+      openReviewProductId.value = null
+      toast.add({ title: 'Đánh giá thành công!', color: 'success' })
+   } catch (e: any) {
+      toast.add({
+         title: 'Lỗi',
+         description: e?.data?.message || 'Không thể gửi đánh giá',
+         color: 'error',
+      })
+   } finally {
+      savingProductId.value = null
+   }
+}
+
+async function submitEdit(productId: number, reviewId: number) {
+   const form = editForms.value[productId]
+   if (!form?.content?.trim()) return
+   savingProductId.value = productId
+   try {
+      const res = await api<any>(`/reviews/${reviewId}`, {
+         method: 'PATCH',
+         body: { rating: form.rating, content: form.content.trim() },
+      })
+      reviews.value[productId] = { ...reviews.value[productId], ...res, isEdited: true }
+      editingProductId.value = null
+      toast.add({ title: 'Đã cập nhật đánh giá!', color: 'success' })
+   } catch (e: any) {
+      toast.add({
+         title: 'Lỗi',
+         description: e?.data?.message || 'Không thể cập nhật đánh giá',
+         color: 'error',
+      })
+   } finally {
+      savingProductId.value = null
+   }
+}
+
+onMounted(async () => {
+   await store.fetchOne(orderId)
+   await fetchReviews()
+})
 </script>
