@@ -31,7 +31,8 @@
                <div class="flex items-center gap-3 flex-wrap">
                   <div v-for="item in order.items.slice(0, 3)" :key="item.id" class="flex items-center gap-2">
                      <div class="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center shrink-0">
-                       <img v-if="item.product?.images?.[0]" :src="item.product.images[0].url" alt="Product Image" class="w-full h-full object-cover rounded-lg" />
+                        <img v-if="item.product?.images?.[0]" :src="item.product.images[0].url" alt="Product Image"
+                           class="w-full h-full object-cover rounded-lg" />
                      </div>
                      <div>
                         <p class="text-xs font-medium text-gray-900 max-w-28 truncate">{{ item.product?.name }}</p>
@@ -83,11 +84,13 @@ const cancellingId = ref<number | null>(null)
 
 const statusColors: Record<OrderStatus, string> = {
    PENDING: 'warning', CONFIRMED: 'info',
-   SHIPPING: 'primary', DELIVERED: 'success', CANCELLED: 'error',
+   SHIPPING: 'primary', DELIVERED: 'success',
+   COMPLETED: 'success', CANCELLED: 'error',
 }
 const statusLabels: Record<OrderStatus, string> = {
    PENDING: 'Chờ xác nhận', CONFIRMED: 'Đã xác nhận',
-   SHIPPING: 'Đang giao', DELIVERED: 'Đã giao', CANCELLED: 'Đã hủy',
+   SHIPPING: 'Đang giao hàng', DELIVERED: 'Đã giao hàng',
+   COMPLETED: 'Hoàn thành', CANCELLED: 'Đã hủy',
 }
 
 async function handleCancel(id: number) {

@@ -118,7 +118,7 @@
 
                      <div v-if="couponOpen && !loadingCoupons && couponInput && filteredCoupons.length === 0"
                         class="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg px-4 py-3 text-sm text-gray-400">
-                        Không tìm thấy mã "{{ couponInput }}" — nhấn Áp dụng để kiểm tra
+                        Không tìm thấy mã "{{ couponInput }}"
                      </div>
                   </div>
 

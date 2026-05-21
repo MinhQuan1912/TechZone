@@ -119,6 +119,7 @@ export type OrderStatus =
   | "CONFIRMED"
   | "SHIPPING"
   | "DELIVERED"
+  | "COMPLETED"
   | "CANCELLED";
 export type PaymentMethod = "VNPAY" | "COD";
 

@@ -78,7 +78,7 @@
                      </div>
                   </NuxtLink>
 
-                  <div v-if="store.current.status === 'DELIVERED'" class="mt-3 ml-3">
+                  <div v-if="store.current.status === 'COMPLETED'" class="mt-3 ml-3">
                      <div v-if="reviews[item.product.id]" class="bg-gray-50 rounded-xl p-3">
                         <div class="flex items-start justify-between gap-2">
                            <div class="flex-1">
@@ -222,6 +222,10 @@
          </div>
 
          <div class="flex gap-3 justify-end">
+            <UButton v-if="store.current.status === 'DELIVERED'" color="success" icon="i-heroicons-check-circle"
+               :loading="completing" @click="handleComplete">
+               Xác nhận đã nhận hàng
+            </UButton>
             <UButton
                v-if="store.current.paymentMethod === 'COD' && ['PENDING', 'CONFIRMED'].includes(store.current.status)"
                color="error" variant="outline" icon="i-heroicons-x-circle" :loading="cancelling" @click="handleCancel">
@@ -247,28 +251,45 @@ const toast = useToast()
 const { formatCurrency, formatDate } = useFormat()
 const orderId = Number(route.params.id)
 const cancelling = ref(false)
-
+const completing = ref(false)
 useHead(() => ({
    title: store.current ? `Đơn ${store.current.code}` : 'Chi tiết đơn hàng',
 }))
 
 const statusColors: Record<OrderStatus, string> = {
    PENDING: 'warning', CONFIRMED: 'info',
-   SHIPPING: 'primary', DELIVERED: 'success', CANCELLED: 'error',
+   SHIPPING: 'primary', DELIVERED: 'success',
+   COMPLETED: 'success', CANCELLED: 'error',
 }
 const statusLabels: Record<OrderStatus, string> = {
    PENDING: 'Chờ xác nhận', CONFIRMED: 'Đã xác nhận',
-   SHIPPING: 'Đang giao hàng', DELIVERED: 'Đã giao hàng', CANCELLED: 'Đã hủy',
+   SHIPPING: 'Đang giao hàng', DELIVERED: 'Đã giao hàng',
+   COMPLETED: 'Hoàn thành', CANCELLED: 'Đã hủy',
 }
 
 const orderSteps = [
    { status: 'PENDING', label: 'Đã đặt', icon: 'i-heroicons-clipboard-document-check' },
    { status: 'CONFIRMED', label: 'Đã xác nhận', icon: 'i-heroicons-check-badge' },
    { status: 'SHIPPING', label: 'Đang giao', icon: 'i-heroicons-truck' },
-   { status: 'DELIVERED', label: 'Đã nhận', icon: 'i-heroicons-home' },
+   { status: 'DELIVERED', label: 'Đã giao', icon: 'i-heroicons-home' },
+   { status: 'COMPLETED', label: 'Hoàn thành', icon: 'i-heroicons-check-circle' },
 ]
 
-const statusOrder = ['PENDING', 'CONFIRMED', 'SHIPPING', 'DELIVERED']
+const statusOrder = ['PENDING', 'CONFIRMED', 'SHIPPING', 'DELIVERED', 'COMPLETED']
+
+async function handleComplete() {
+   completing.value = true
+   try {
+      await api(`/orders/${orderId}/complete`, { method: 'PATCH' })
+      await store.fetchOne(orderId)
+      await fetchReviews()
+      toast.add({ title: 'Đã xác nhận hoàn thành đơn hàng!', color: 'success' })
+   } catch (e: any) {
+      toast.add({ title: 'Lỗi', description: e?.data?.message, color: 'error' })
+   } finally {
+      completing.value = false
+   }
+}
 
 function stepReached(status: string) {
    const current = store.current?.status || ''
@@ -293,7 +314,7 @@ const editingProductId = ref<number | null>(null)
 const savingProductId = ref<number | null>(null)
 
 async function fetchReviews() {
-   if (store.current?.status !== 'DELIVERED') return
+   if (store.current?.status !== 'COMPLETED') return
    const productIds = store.current.items.map(i => i.product.id)
    await Promise.all(
       productIds.map(async (pid) => {
