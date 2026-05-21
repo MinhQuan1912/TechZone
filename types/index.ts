@@ -144,6 +144,7 @@ export interface Order {
   recipientPhone: string;
   recipientAddress: string;
   note: string | null;
+  cancelReason: string | null;
   createdAt: string;
   updatedAt: string;
   items: OrderItem[];

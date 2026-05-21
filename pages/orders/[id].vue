@@ -174,6 +174,17 @@
                      <UIcon name="i-heroicons-chat-bubble-left" class="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
                      <span class="text-gray-500 italic">{{ store.current.note }}</span>
                   </div>
+                  <div v-if="store.current.status === 'CANCELLED'"
+                     class="flex gap-2 mt-2 p-3 bg-red-50 rounded-lg border border-red-100">
+                     <UIcon name="i-heroicons-x-circle" class="w-4 h-4 text-red-500 mt-0.5 shrink-0" />
+                     <div>
+                        <p class="text-sm font-medium text-red-700">Đơn hàng đã bị hủy</p>
+                        <p v-if="store.current.cancelReason" class="text-sm text-red-600 mt-0.5 italic">
+                           Lý do: {{ store.current.cancelReason }}
+                        </p>
+                        <p v-else class="text-sm text-red-400 mt-0.5 italic">Không có lý do cụ thể</p>
+                     </div>
+                  </div>
                </div>
             </UCard>
 
@@ -226,9 +237,8 @@
                :loading="completing" @click="handleComplete">
                Xác nhận đã nhận hàng
             </UButton>
-            <UButton
-               v-if="store.current.paymentMethod === 'COD' && ['PENDING', 'CONFIRMED'].includes(store.current.status)"
-               color="error" variant="outline" icon="i-heroicons-x-circle" :loading="cancelling" @click="handleCancel">
+            <UButton v-if="['PENDING', 'CONFIRMED'].includes(store.current.status)" color="error" variant="outline"
+               icon="i-heroicons-x-circle" :loading="cancelling" @click="showCancelModal = true">
                Hủy đơn
             </UButton>
             <UButton to="/products" color="primary" variant="soft">
@@ -237,6 +247,26 @@
          </div>
       </div>
    </div>
+   <UModal v-model:open="showCancelModal">
+      <template #content>
+         <div class="p-6 space-y-4">
+            <h3 class="text-lg font-semibold text-gray-900">Xác nhận hủy đơn hàng</h3>
+            <p class="text-sm text-gray-500">Bạn có chắc muốn hủy đơn hàng này không? Hành động này không thể hoàn tác.
+            </p>
+            <UFormField label="Lý do hủy">
+               <UTextarea v-model="cancelReason" placeholder="Nhập lý do hủy đơn..." :rows="3" class="w-full" />
+            </UFormField>
+            <div class="flex gap-3 justify-end">
+               <UButton color="neutral" variant="outline" @click="showCancelModal = false">
+                  Không hủy
+               </UButton>
+               <UButton color="error" :loading="cancelling" @click="confirmCancel">
+                  Xác nhận hủy
+               </UButton>
+            </div>
+         </div>
+      </template>
+   </UModal>
 </template>
 
 <script setup lang="ts">
@@ -252,6 +282,8 @@ const { formatCurrency, formatDate } = useFormat()
 const orderId = Number(route.params.id)
 const cancelling = ref(false)
 const completing = ref(false)
+const showCancelModal = ref(false)
+const cancelReason = ref('')
 useHead(() => ({
    title: store.current ? `Đơn ${store.current.code}` : 'Chi tiết đơn hàng',
 }))
@@ -277,6 +309,7 @@ const orderSteps = [
 
 const statusOrder = ['PENDING', 'CONFIRMED', 'SHIPPING', 'DELIVERED', 'COMPLETED']
 
+
 async function handleComplete() {
    completing.value = true
    try {
@@ -296,10 +329,12 @@ function stepReached(status: string) {
    return statusOrder.indexOf(status) <= statusOrder.indexOf(current)
 }
 
-async function handleCancel() {
+async function confirmCancel() {
    cancelling.value = true
    try {
-      await store.cancelOrder(orderId)
+      await store.cancelOrder(orderId, cancelReason.value || undefined)
+      showCancelModal.value = false
+      cancelReason.value = ''
    } finally {
       cancelling.value = false
    }

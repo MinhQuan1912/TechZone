@@ -59,9 +59,8 @@
                   <UButton size="sm" color="neutral" variant="outline" :to="`/orders/${order.id}`">
                      Chi tiết
                   </UButton>
-                  <UButton v-if="order.paymentMethod === 'COD' && ['PENDING', 'CONFIRMED'].includes(order.status)"
-                     size="sm" color="error" variant="outline" :loading="cancellingId === order.id"
-                     @click="handleCancel(order.id)">
+                  <UButton v-if="['PENDING', 'CONFIRMED'].includes(order.status)" size="sm" color="error"
+                     variant="outline" :loading="cancellingId === order.id" @click="openCancelModal(order.id)">
                      Hủy
                   </UButton>
                </div>
@@ -70,6 +69,25 @@
          <CommonAppPagination :current-page="store.page" :total-pages="store.totalPages" @change="store.changePage" />
       </div>
    </div>
+   <UModal v-model:open="showCancelModal">
+      <template #content>
+         <div class="p-6 space-y-4">
+            <h3 class="text-lg font-semibold text-gray-900">Xác nhận hủy đơn hàng</h3>
+            <p class="text-sm text-gray-500">Bạn có chắc muốn hủy đơn hàng này không?</p>
+            <UFormField label="Lý do hủy">
+               <UTextarea v-model="cancelReason" placeholder="Nhập lý do hủy đơn..." :rows="3" class="w-full" />
+            </UFormField>
+            <div class="flex gap-3 justify-end">
+               <UButton color="neutral" variant="outline" @click="showCancelModal = false">
+                  Không hủy
+               </UButton>
+               <UButton color="error" :loading="cancellingId !== null" @click="confirmCancel">
+                  Xác nhận hủy
+               </UButton>
+            </div>
+         </div>
+      </template>
+   </UModal>
 </template>
 
 <script setup lang="ts">
@@ -81,6 +99,9 @@ useHead({ title: 'Đơn hàng của tôi' })
 const store = useOrderStore()
 const { formatCurrency, formatDate } = useFormat()
 const cancellingId = ref<number | null>(null)
+const showCancelModal = ref(false)
+const cancelReason = ref('')
+const pendingCancelId = ref<number | null>(null)
 
 const statusColors: Record<OrderStatus, string> = {
    PENDING: 'warning', CONFIRMED: 'info',
@@ -93,14 +114,23 @@ const statusLabels: Record<OrderStatus, string> = {
    COMPLETED: 'Hoàn thành', CANCELLED: 'Đã hủy',
 }
 
-async function handleCancel(id: number) {
-   cancellingId.value = id
+function openCancelModal(id: number) {
+   pendingCancelId.value = id
+   cancelReason.value = ''
+   showCancelModal.value = true
+}
+
+async function confirmCancel() {
+   if (!pendingCancelId.value) return
+   cancellingId.value = pendingCancelId.value
    try {
-      await store.cancelOrder(id)
+      await store.cancelOrder(pendingCancelId.value, cancelReason.value || undefined)
+      showCancelModal.value = false
+      cancelReason.value = ''
+      pendingCancelId.value = null
    } finally {
       cancellingId.value = null
    }
 }
-
 onMounted(() => store.fetchMyOrders())
 </script>

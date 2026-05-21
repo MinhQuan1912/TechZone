@@ -50,11 +50,17 @@ export const useOrderStore = defineStore("orders", () => {
     });
   }
 
-  async function cancelOrder(id: number) {
-    await api(`/users/orders/${id}/cancel`, { method: "POST" });
+  async function cancelOrder(id: number, reason?: string) {
+    await api(`/users/orders/${id}/cancel`, {
+      method: "POST",
+      body: reason ? { reason } : undefined,
+    });
     const order = items.value.find((o) => o.id === id);
     if (order) order.status = "CANCELLED";
-    if (current.value?.id === id) current.value.status = "CANCELLED";
+    if (current.value?.id === id) {
+      current.value.status = "CANCELLED";
+      if (reason) current.value.cancelReason = reason;
+    }
     toast.add({ title: "Đã hủy đơn hàng", color: "info" });
   }
 
@@ -78,4 +84,3 @@ export const useOrderStore = defineStore("orders", () => {
     changePage,
   };
 });
-   
