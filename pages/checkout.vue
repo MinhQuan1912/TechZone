@@ -1,16 +1,13 @@
 <template>
    <div class="max-w-5xl mx-auto px-4 sm:px-6 py-8">
       <h1 class="text-2xl font-bold text-gray-900 mb-6">Thanh toán</h1>
-
       <div v-if="cartStore.loading" class="text-center py-20">
          <div class="w-10 h-10 border-4 border-primary-500 border-t-transparent rounded-full animate-spin mx-auto" />
       </div>
-
       <div v-else-if="checkoutItems.length === 0">
          <CommonAppEmpty icon="i-heroicons-shopping-cart" title="Không có sản phẩm để thanh toán"
             action-label="Xem giỏ hàng" action-to="/cart" />
       </div>
-
       <div v-else class="grid lg:grid-cols-3 gap-6">
          <div class="lg:col-span-2 space-y-5">
             <UCard>
@@ -118,7 +115,7 @@
 
                      <div v-if="couponOpen && !loadingCoupons && couponInput && filteredCoupons.length === 0"
                         class="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg px-4 py-3 text-sm text-gray-400">
-                        Không tìm thấy mã "{{ couponInput }}"
+                        Không tìm thấy mã "{{ couponInput }}" — nhấn Áp dụng để kiểm tra
                      </div>
                   </div>
 
@@ -137,13 +134,15 @@
                   </div>
                </template>
                <div class="space-y-3">
-                  <label class="flex items-center gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all" :class="form.paymentMethod === 'VNPAY'
-                     ? 'border-primary-500 bg-primary-50'
-                     : 'border-gray-200 hover:border-gray-300'" @click="form.paymentMethod = 'VNPAY'">
+                  <label class="flex items-center gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all"
+                     :class="form.paymentMethod === 'VNPAY' ? 'border-primary-500 bg-primary-50' : 'border-gray-200 hover:border-gray-300'"
+                     @click="form.paymentMethod = 'VNPAY'">
+
                      <div class="w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0"
                         :class="form.paymentMethod === 'VNPAY' ? 'border-primary-500' : 'border-gray-300'">
                         <div v-if="form.paymentMethod === 'VNPAY'" class="w-2.5 h-2.5 rounded-full bg-primary-500" />
                      </div>
+
                      <div class="flex items-center gap-3 flex-1">
                         <div class="w-11 h-11 rounded-xl bg-red-50 flex items-center justify-center text-xl">
                            <IconsBank />
@@ -156,9 +155,10 @@
                      <UBadge color="success" variant="soft" size="sm">Phổ biến</UBadge>
                   </label>
 
-                  <label class="flex items-center gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all" :class="form.paymentMethod === 'COD'
-                     ? 'border-primary-500 bg-primary-50'
-                     : 'border-gray-200 hover:border-gray-300'" @click="form.paymentMethod = 'COD'">
+                  <label class="flex items-center gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all"
+                     :class="form.paymentMethod === 'COD' ? 'border-primary-500 bg-primary-50' : 'border-gray-200 hover:border-gray-300'"
+                     @click="form.paymentMethod = 'COD'">
+
                      <div class="w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0"
                         :class="form.paymentMethod === 'COD' ? 'border-primary-500' : 'border-gray-300'">
                         <div v-if="form.paymentMethod === 'COD'" class="w-2.5 h-2.5 rounded-full bg-primary-500" />
@@ -247,6 +247,7 @@
 <script setup lang="ts">
 import { useAddress } from '~/composables/useAddress'
 
+
 definePageMeta({ middleware: 'auth' })
 useHead({ title: 'Thanh toán' })
 
@@ -256,15 +257,6 @@ const orderStore = useOrderStore()
 const { api } = useApi()
 const toast = useToast()
 const { formatCurrency, formatDate } = useFormat()
-const couponInput = ref('')
-const appliedCoupon = ref<any>(null)
-const discountAmount = ref(0)
-const validatingCoupon = ref(false)
-const placing = ref(false)
-const availableCoupons = ref<any[]>([])
-const loadingCoupons = ref(false)
-const couponContainerRef = ref<HTMLElement>()
-const couponOpen = ref(false)
 
 const {
    provinces,
@@ -276,6 +268,8 @@ const {
    buildAddressString,
    parseAddressString,
 } = useAddress()
+
+// Address
 
 const addressForm = reactive({
    provinceCode: null as number | null,
@@ -310,6 +304,8 @@ const fullAddress = computed(() =>
    buildAddressString(addressForm.street, addressForm.wardName, addressForm.provinceName)
 )
 
+// Checkout
+
 const selectedItemIds = ref<number[]>([])
 const checkoutItems = computed(() =>
    cartStore.items.filter(i => selectedItemIds.value.includes(i.id))
@@ -321,6 +317,80 @@ const form = reactive({
    note: '',
    paymentMethod: 'VNPAY' as 'VNPAY' | 'COD',
 })
+
+// Coupon
+
+const couponContainerRef = ref<HTMLElement>()
+const couponOpen = ref(false)
+const couponInput = ref('')
+const appliedCoupon = ref<any>(null)
+const discountAmount = ref(0)
+const validatingCoupon = ref(false)
+const availableCoupons = ref<any[]>([])
+const loadingCoupons = ref(false)
+
+const filteredCoupons = computed(() => {
+   if (!couponInput.value) return availableCoupons.value
+   const q = couponInput.value.toUpperCase().trim()
+   return availableCoupons.value.filter(c =>
+      c.code.includes(q) || c.description?.toUpperCase().includes(q)
+   )
+})
+
+async function fetchAvailableCoupons() {
+   if (!totalAmount.value) return
+   loadingCoupons.value = true
+   try {
+      const res = await api<any[]>(`/coupons/available?amount=${totalAmount.value}`)
+      availableCoupons.value = Array.isArray(res) ? res : []
+   } catch {
+      availableCoupons.value = []
+   } finally {
+      loadingCoupons.value = false
+   }
+}
+
+async function selectCoupon(coupon: any) {
+   couponInput.value = coupon.code
+   couponOpen.value = false
+   await validateCoupon()
+}
+
+async function validateCoupon() {
+   if (!couponInput.value.trim()) return
+   validatingCoupon.value = true
+   couponOpen.value = false
+   try {
+      const res = await api<any>('/coupons/validate', {
+         method: 'POST',
+         body: { code: couponInput.value.toUpperCase(), amount: totalAmount.value },
+      })
+      appliedCoupon.value = res.coupon
+      discountAmount.value = res.discount
+      toast.add({
+         title: 'Áp dụng thành công',
+         description: `Giảm ${formatCurrency(res.discount)}`,
+         color: 'success',
+      })
+   } catch {
+   } finally {
+      validatingCoupon.value = false
+   }
+}
+
+function removeCoupon() {
+   appliedCoupon.value = null
+   discountAmount.value = 0
+   couponInput.value = ''
+}
+
+function handleCouponOutsideClick(e: MouseEvent) {
+   if (!couponContainerRef.value?.contains(e.target as Node)) {
+      couponOpen.value = false
+   }
+}
+
+const placing = ref(false)
 
 const totalAmount = computed(() =>
    checkoutItems.value.reduce((s, i) => s + i.variant.salePrice * i.quantity, 0)
@@ -360,66 +430,6 @@ async function fillProfile() {
    }
 }
 
-async function validateCoupon() {
-   if (!couponInput.value.trim()) return
-   validatingCoupon.value = true
-   couponOpen.value = false
-   try {
-      const res = await api<any>('/coupons/validate', {
-         method: 'POST',
-         body: { code: couponInput.value.toUpperCase(), amount: totalAmount.value },
-      })
-      appliedCoupon.value = res.coupon
-      discountAmount.value = res.discount
-      toast.add({
-         title: 'Áp dụng thành công',
-         description: `Giảm ${formatCurrency(res.discount)}`,
-         color: 'success',
-      })
-   } catch {
-   } finally {
-      validatingCoupon.value = false
-   }
-}
-
-function removeCoupon() {
-   appliedCoupon.value = null
-   discountAmount.value = 0
-   couponInput.value = ''
-}
-
-const filteredCoupons = computed(() => {
-   if (!couponInput.value) return availableCoupons.value
-   const q = couponInput.value.toUpperCase().trim()
-   return availableCoupons.value.filter(c =>
-      c.code.includes(q) || c.description?.toUpperCase().includes(q)
-   )
-})
-
-async function selectCoupon(coupon: any) {
-   couponInput.value = coupon.code
-   couponOpen.value = false
-   await validateCoupon()
-}
-
-function handleCouponOutsideClick(e: MouseEvent) {
-   if (!couponContainerRef.value?.contains(e.target as Node)) {
-      couponOpen.value = false
-   }
-}
-async function fetchAvailableCoupons() {
-   if (!totalAmount.value) return
-   loadingCoupons.value = true
-   try {
-      const res = await api<any[]>(`/coupons/available?amount=${totalAmount.value}`)
-      availableCoupons.value = Array.isArray(res) ? res : []
-   } catch {
-      availableCoupons.value = []
-   } finally {
-      loadingCoupons.value = false
-   }
-}
-
 async function placeOrder() {
    if (!canOrder.value) return
    placing.value = true
@@ -433,11 +443,12 @@ async function placeOrder() {
          recipientAddress: fullAddress.value,
          note: form.note || undefined,
       })
-      await cartStore.fetchCart()
+
       if (form.paymentMethod === 'VNPAY' && result.paymentUrl) {
          toast.add({ title: 'Đang chuyển đến VNPay...', color: 'info' })
          if (import.meta.client) window.location.href = result.paymentUrl
       } else {
+         await cartStore.fetchCart()
          toast.add({ title: 'Đặt hàng thành công!', color: 'success' })
          await navigateTo(`/orders/${result.order.id}`)
       }
@@ -454,6 +465,7 @@ async function placeOrder() {
 
 onMounted(async () => {
    document.addEventListener('mousedown', handleCouponOutsideClick)
+
    await fetchProvinces()
 
    if (!cartStore.isFetched) {
@@ -466,12 +478,14 @@ onMounted(async () => {
          ? JSON.parse(saved)
          : cartStore.items.map(i => i.id)
    }
-   await fetchAvailableCoupons()
+
    form.recipientName = authStore.user?.name || ''
    form.recipientPhone = authStore.user?.phone || ''
+
+   await fetchAvailableCoupons()
 })
 
 onUnmounted(() => {
-   document.removeEventListener('mousedown', handleCouponOutsideClick) 
+   document.removeEventListener('mousedown', handleCouponOutsideClick)
 })
 </script>

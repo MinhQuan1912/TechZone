@@ -21,7 +21,8 @@
                <UIcon name="i-heroicons-x-circle-solid" class="w-14 h-14 text-red-500" />
             </div>
             <h1 class="text-2xl font-bold text-gray-900 mb-2">Thanh toán thất bại</h1>
-            <p class="text-gray-500 mb-8">Đơn hàng đã bị hủy. Vui lòng thử lại.</p>
+            <p class="text-gray-500 mb-2">Đơn hàng đã bị hủy.</p>
+            <p class="text-sm text-gray-400 mb-8">Giỏ hàng của bạn vẫn được giữ nguyên, bạn có thể thanh toán lại.</p>
          </div>
 
          <div class="flex gap-3 justify-center">
@@ -29,12 +30,14 @@
                icon="i-heroicons-shopping-bag">
                Xem đơn hàng
             </UButton>
-            <UButton v-if="!isSuccess" to="/cart" color="primary" icon="i-heroicons-arrow-path">
+
+            <UButton v-if="!isSuccess" to="/payment/checkout" color="primary" icon="i-heroicons-arrow-path">
                Thử lại
             </UButton>
-            <NuxtLink to="/" color="neutral" variant="outline">
+
+            <UButton to="/" color="neutral" variant="outline">
                Về trang chủ
-            </NuxtLink>
+            </UButton>
          </div>
       </template>
    </div>
@@ -45,6 +48,7 @@ useHead({ title: 'Kết quả thanh toán' })
 
 const route = useRoute()
 const { api } = useApi()
+const cartStore = useCartStore()
 
 const loading = ref(true)
 const isSuccess = ref(false)
@@ -64,6 +68,11 @@ onMounted(async () => {
       })
       orderId.value = res.orderId || null
    } catch { }
+
+   if (isSuccess.value) {
+      await cartStore.fetchCart()
+   }
+
    loading.value = false
 })
 </script>
