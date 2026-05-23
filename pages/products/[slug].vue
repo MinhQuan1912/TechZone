@@ -33,8 +33,7 @@
          <div class="grid md:grid-cols-2 gap-8 lg:gap-12">
             <div>
                <ProductImages :product-images="(product as any).images || []"
-                  :variant-image-url="currentVariantImageUrl"
-                  :alt="(product as any).name" />
+                  :variant-image-url="currentVariantImageUrl" :alt="(product as any).name" />
             </div>
             <div class="space-y-5">
                <div class="flex gap-2 flex-wrap">
@@ -61,6 +60,7 @@
                   @update:selected="selectedVariant = $event"
                   @update:variant-image-url="currentVariantImageUrl = $event"
                   @update:selected-color="currentSelectedColor = $event" />
+
                <div v-if="selectedVariant" class="flex items-center gap-3">
                   <span class="text-sm font-medium text-gray-700">Số lượng:</span>
                   <div class="flex items-center border border-gray-200 rounded-xl overflow-hidden">
@@ -72,26 +72,26 @@
                      <span class="w-10 text-center font-bold">{{ quantity }}</span>
                      <button
                         class="w-9 h-9 flex items-center justify-center text-gray-500 hover:bg-gray-50 disabled:opacity-40 transition-colors"
-                        :disabled="quantity >= (selectedVariant?.stock || 0)" @click="quantity++">
+                        :disabled="quantity >= maxCanAdd" @click="quantity++">
                         <UIcon name="i-heroicons-plus" class="w-4 h-4" />
                      </button>
                   </div>
                </div>
+
                <div class="flex gap-3 pt-2">
                   <UButton color="primary" size="xl" class="flex-1 font-bold disabled:cursor-not-allowed"
-                     :disabled="!selectedVariant" :loading="addingToCart"
+                     :disabled="!selectedVariant || maxCanAdd <= 0" :loading="addingToCart"
                      icon="i-heroicons-shopping-cart" @click="handleAddToCart">
                      {{ !selectedVariant
                         ? 'Chọn phiên bản'
                         : selectedVariant.stock === 0
                            ? 'Hết hàng'
-                           : 'Thêm vào giỏ' }}
-                  </UButton>
-                  <UButton size="xl" color="neutral" variant="outline" :icon="wishlistStore.isInWishlist((product as any).id)
-                     ? 'i-heroicons-heart-solid'
-                     : 'i-heroicons-heart'" :class="wishlistStore.isInWishlist((product as any).id)
-                  ? 'text-red-500 border-red-200'
-                  : ''" @click="wishlistStore.toggle((product as any).id)" />
+                           : maxCanAdd <= 0 ? 'Đã đạt giới hạn tồn kho' : 'Thêm vào giỏ' }} </UButton>
+                        <UButton size="xl" color="neutral" variant="outline" :icon="wishlistStore.isInWishlist((product as any).id)
+                           ? 'i-heroicons-heart-solid'
+                           : 'i-heroicons-heart'" :class="wishlistStore.isInWishlist((product as any).id)
+                              ? 'text-red-500 border-red-200'
+                              : ''" @click="wishlistStore.toggle((product as any).id)" />
                </div>
                <div class="grid grid-cols-2 gap-2 pt-3 border-t border-gray-100">
                   <div v-for="feat in features" :key="feat.text" class="flex items-center gap-2 text-xs text-gray-500">
@@ -185,7 +185,7 @@ useHead(() => ({
 }))
 const selectedVariant = ref<ProductVariant | null>(null)
 const currentVariantImageUrl = ref<string | null>(null)
-const currentSelectedColor = ref<string | null>(null)  
+const currentSelectedColor = ref<string | null>(null)
 const quantity = ref(1)
 const addingToCart = ref(false)
 
@@ -212,10 +212,32 @@ const features = [
    { icon: 'i-heroicons-wrench-screwdriver', text: 'Bảo hành 12 tháng' },
 ]
 
-watch(selectedVariant, () => { quantity.value = 1 })
+const cartQty = computed(() => {
+   if (!selectedVariant.value) return 0
+   const item = cartStore.items.find(i => i.variant?.id === selectedVariant.value?.id)
+   return item ? item.quantity : 0
+})
+
+const maxCanAdd = computed(() => {
+   if (!selectedVariant.value) return 0
+   return Math.max(0, selectedVariant.value.stock - cartQty.value)
+})
+
+watch(selectedVariant, () => {
+   quantity.value = 1
+})
+
+watch(maxCanAdd, (val) => {
+   if (quantity.value > val) {
+      quantity.value = Math.max(1, val)
+   }
+})
 
 async function handleAddToCart() {
    if (!selectedVariant.value) return
+   if (maxCanAdd.value <= 0) return
+   if (quantity.value > maxCanAdd.value) return
+
    addingToCart.value = true
    try {
       await cartStore.addToCart(

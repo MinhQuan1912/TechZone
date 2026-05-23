@@ -85,17 +85,21 @@
                      <div class="flex items-center border border-gray-200 rounded-xl overflow-hidden">
                         <button
                            class="w-8 h-8 flex items-center justify-center text-gray-500 hover:bg-gray-50 disabled:opacity-40"
-                           :disabled="item.quantity <= 1" @click="cartStore.updateQuantity(item.id, item.quantity - 1)">
+                           :disabled="item.quantity <= 1" @click="handleUpdateQuantity(item, item.quantity - 1)">
                            <UIcon name="i-heroicons-minus" class="w-3.5 h-3.5" />
                         </button>
                         <span class="w-8 text-center text-sm font-bold">{{ item.quantity }}</span>
                         <button
                            class="w-8 h-8 flex items-center justify-center text-gray-500 hover:bg-gray-50 disabled:opacity-40"
-                           :disabled="item.quantity >= item.variant.stock"
-                           @click="cartStore.updateQuantity(item.id, item.quantity + 1)">
+                           :disabled="item.variant?.stock !== undefined && item.quantity >= item.variant.stock"
+                           @click="handleUpdateQuantity(item, item.quantity + 1)">
                            <UIcon name="i-heroicons-plus" class="w-3.5 h-3.5" />
                         </button>
                      </div>
+                     <span v-if="item.variant?.stock !== undefined && item.quantity >= item.variant.stock"
+                        class="text-xs text-orange-500 font-medium">
+                        Tối đa
+                     </span>
                   </div>
                </div>
 
@@ -150,6 +154,7 @@ definePageMeta({ middleware: 'auth' })
 useHead({ title: 'Giỏ hàng' })
 
 const cartStore = useCartStore()
+const toast = useToast()
 const { formatCurrency } = useFormat()
 const selectedIds = ref<number[]>([])
 const selectAll = ref(false)
@@ -199,6 +204,22 @@ async function removeSingleItem(id: number) {
    await cartStore.removeItems([id])
    selectedIds.value = selectedIds.value.filter(i => i !== id)
    selectAll.value = selectedIds.value.length === activeItems.value.length
+}
+
+async function handleUpdateQuantity(item: any, newQty: number) {
+   if (newQty < 1) return
+   if (item.variant?.stock !== undefined && newQty > item.variant.stock) {
+      toast.add({
+         title: `Chỉ còn ${item.variant.stock} sản phẩm trong kho`,
+         color: 'warning',
+      })
+      if (item.quantity !== item.variant.stock) {
+         await cartStore.updateQuantity(item.id, item.variant.stock)
+      }
+      return
+   }
+
+   await cartStore.updateQuantity(item.id, newQty)
 }
 
 onMounted(async () => {
