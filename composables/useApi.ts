@@ -1,3 +1,4 @@
+let refreshPromise: Promise<void> | null = null;
 export const useApi = () => {
   const config = useRuntimeConfig();
   const baseURL = config.public.apiBase as string;
@@ -33,7 +34,12 @@ export const useApi = () => {
     } catch (err: any) {
       if (err.status === 401) {
         try {
-          await authStore.doRefresh();
+          if (!refreshPromise) {
+            refreshPromise = authStore.doRefresh().finally(() => {
+              refreshPromise = null;
+            });
+          }
+          await refreshPromise;
           return await doFetch();
         } catch (refreshError) {
           authStore.logout();
