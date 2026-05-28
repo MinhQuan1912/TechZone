@@ -108,7 +108,7 @@
                                  Hủy
                               </UButton>
                               <UButton size="xs" color="primary" :loading="savingProductId === item.product.id"
-                                 :disabled="!getEditForm(item.product.id).content.trim()"
+                                 :disabled="!getEditForm(item.product.id).rating && !getEditForm(item.product.id).content.trim()"
                                  @click="submitEdit(item.product.id, reviews[item.product.id].id)">
                                  Lưu
                               </UButton>
@@ -418,14 +418,21 @@ async function submitNew(productId: number) {
 
 async function submitEdit(productId: number, reviewId: number) {
    const form = editForms.value[productId]
-   if (!form?.content?.trim()) return
+   if (!form?.rating && !form?.content?.trim()) return
    savingProductId.value = productId
    try {
+      const body: Record<string, any> = {}
+      if (form.rating) body.rating = form.rating
+      if (form.content?.trim()) body.content = form.content.trim()
       const res = await api<any>(`/reviews/${reviewId}`, {
          method: 'PATCH',
-         body: { rating: form.rating, content: form.content.trim() },
+         body,
       })
-      reviews.value[productId] = { ...reviews.value[productId], ...res, isEdited: true }
+      reviews.value[productId] = {
+         ...reviews.value[productId],
+         ...res,
+         isEdited: true
+      }
       editingProductId.value = null
       toast.add({ title: 'Đã cập nhật đánh giá!', color: 'success' })
    } catch (e: any) {

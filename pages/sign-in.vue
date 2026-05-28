@@ -64,8 +64,6 @@ definePageMeta({
 })
 useHead({ title: 'Đăng nhập' })
 const authStore = useAuthStore()
-const cartStore = useCartStore()
-const wishlistStore = useWishlistStore()
 const toast = useToast()
 const route = useRoute()
 

@@ -122,7 +122,7 @@
                            Hủy
                         </UButton>
                         <UButton size="xs" color="primary" :loading="updating"
-                           :disabled="!editForm.rating || !editForm.content.trim()" @click="saveEdit(review.id)">
+                           :disabled="!editForm.rating && !editForm.content.trim()" @click="saveEdit(review.id)">
                            Lưu
                         </UButton>
                      </div>
@@ -220,15 +220,15 @@ function cancelEdit() {
 }
 
 async function saveEdit(reviewId: number) {
-   if (!editForm.rating || !editForm.content.trim()) return
+   if (!editForm.rating && !editForm.content.trim()) return
    updating.value = true
    try {
+      const body: Record<string, any> = {}
+      if (editForm.rating) body.rating = editForm.rating
+      if (editForm.content.trim()) body.content = editForm.content.trim()
       await api(`/reviews/${reviewId}`, {
          method: 'PATCH',
-         body: {
-            rating: editForm.rating,
-            content: editForm.content,
-         },
+         body,
       })
       const idx = reviews.value.findIndex(r => r.id === reviewId)
       if (idx !== -1) {
@@ -236,8 +236,8 @@ async function saveEdit(reviewId: number) {
          if (oldReview) {
             reviews.value[idx] = {
                ...oldReview,
-               rating: editForm.rating,
-               content: editForm.content,
+               rating: body.rating || oldReview.rating,
+               content: body.content || oldReview.content,
                updatedAt: new Date().toISOString(),
             }
          }
