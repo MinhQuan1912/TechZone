@@ -105,7 +105,7 @@
          <div class="mt-12">
             <UTabs :items="tabs" class="w-full">
                <template #description>
-                  <div class="py-6 max-w-3xl">
+                  <div class="py-6 w-full">
                      <p v-if="(product as any).description" class="text-gray-700 leading-relaxed whitespace-pre-line">
                         {{ (product as any).description }}
                      </p>
