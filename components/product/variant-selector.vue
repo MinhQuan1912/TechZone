@@ -48,7 +48,7 @@
          </div>
       </div>
       <div v-if="filteredRams.length > 0" class="flex gap-4 items-center flex-wrap">
-         <p class="text-sm font-medium text-gray-700">RAM:</p>
+         <p class="text-lg font-medium text-gray-700">RAM:</p>
          <div class="flex flex-wrap gap-2">
             <button v-for="ram in filteredRams" :key="ram"
                class="px-3 py-1.5 rounded-xl border-2 text-sm font-medium transition-all" :class="selectedRam === ram
@@ -59,7 +59,7 @@
          </div>
       </div>
       <div v-if="filteredVersions.length > 0" class="flex gap-4 items-center flex-wrap">
-         <p class="text-sm font-medium text-gray-700">Phiên bản:</p>
+         <p class="text-lg font-medium text-gray-700">Phiên bản:</p>
          <div class="flex flex-wrap gap-2">
             <button v-for="version in filteredVersions" :key="version"
                class="px-3 py-1.5 rounded-xl border-2 text-sm font-medium transition-all" :class="selectedVersion === version
