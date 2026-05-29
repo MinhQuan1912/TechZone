@@ -1,4 +1,5 @@
 let refreshPromise: Promise<void> | null = null;
+let sessionExpiredToastShown = false;
 export const useApi = () => {
   const config = useRuntimeConfig();
   const baseURL = config.public.apiBase as string;
@@ -43,12 +44,16 @@ export const useApi = () => {
           return await doFetch();
         } catch (refreshError) {
           authStore.logout();
-          if (!options.server && import.meta.client) {
+          if (!options.server && import.meta.client && !sessionExpiredToastShown) {
+            sessionExpiredToastShown = true
             toast.add({
               title: "Phiên đăng nhập hết hạn",
               description: "Vui lòng đăng nhập lại",
               color: "error",
             });
+            setTimeout(() => {
+              sessionExpiredToastShown = false;
+            }, 3000);
           }
           throw refreshError;
         }
