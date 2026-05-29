@@ -29,6 +29,14 @@ const displayedPages = computed(() => {
    const pages: (number | string)[] = []
    const delta = 1
 
+   if (props.totalPages <= 5) {
+      for (let i = 1; i <= props.totalPages; i++) {
+         pages.push(i)
+      }
+
+      return pages
+   }
+
    for (let i = 1; i <= props.totalPages; i++) {
       if (
          i === 1 ||
@@ -40,6 +48,7 @@ const displayedPages = computed(() => {
          pages.push('...')
       }
    }
+
    return pages
 })
 </script>

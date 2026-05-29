@@ -1,5 +1,5 @@
 <template>
-   <div class="max-w-4xl mx-auto px-4 sm:px-6 py-8">
+   <div class="container mx-auto px-4 sm:px-6 py-8">
       <h1 class="text-2xl font-bold text-gray-900 mb-6">Đơn hàng của tôi</h1>
       <div v-if="store.loading && !store.items.length" class="space-y-4">
          <div v-for="i in 3" :key="i" class="bg-white rounded-2xl border border-gray-100 overflow-hidden animate-pulse">
@@ -30,7 +30,7 @@
       </div>
       <CommonAppEmpty v-else-if="store.items.length === 0" icon="i-heroicons-shopping-bag" title="Chưa có đơn hàng"
          description="Mua sắm ngay để có đơn hàng đầu tiên" action-label="Mua sắm ngay" action-to="/products" />
-      <div v-else class="space-y-4">
+      <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4">
          <div v-for="order in store.items" :key="order.id"
             class="bg-white rounded-2xl border border-gray-100 overflow-hidden hover:border-gray-200 transition-colors">
             <div
@@ -52,7 +52,7 @@
             </div>
 
             <div class="px-5 py-4">
-               <div class="flex items-center gap-3 flex-wrap">
+               <div class="flex items-center gap-4 flex-wrap">
                   <div v-for="item in order.items.slice(0, 3)" :key="item.id" class="flex items-center gap-2">
                      <div class="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center shrink-0">
                         <img v-if="item.product?.images?.[0]" :src="item.product.images[0].url" alt="Product Image"
@@ -90,8 +90,8 @@
                </div>
             </div>
          </div>
-         <CommonAppPagination :current-page="store.page" :total-pages="store.totalPages" @change="store.changePage" />
       </div>
+      <CommonAppPagination :current-page="store.page" :total-pages="store.totalPages" @change="store.changePage" />
    </div>
    <UModal v-model:open="showCancelModal">
       <template #content>
