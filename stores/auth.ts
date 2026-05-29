@@ -50,10 +50,11 @@ export const useAuthStore = defineStore("auth", () => {
     });
   }
   async function updateProfile(data: {
-    name?: string;
-    phone?: string;
-    address?: string;
-  }) {
+  name?: string;
+  phone?: string;
+  address?: string;
+}) {
+  const doFetch = async () => {
     const res = await $fetch<any>("/users/profile", {
       baseURL,
       method: "PATCH",
@@ -63,9 +64,31 @@ export const useAuthStore = defineStore("auth", () => {
         "ngrok-skip-browser-warning": "true",
       },
     });
-    user.value = { ...user.value, ...res.data };
+
     return res.data;
+  };
+
+  try {
+    const result = await doFetch();
+    user.value = { ...user.value, ...result };
+    return result;
+  } catch (err: any) {
+    if (err.status === 401) {
+      try {
+        await doRefresh();
+
+        const result = await doFetch();
+        user.value = { ...user.value, ...result };
+        return result;
+      } catch (refreshError) {
+        await logout();
+        throw refreshError;
+      }
+    }
+
+    throw err;
   }
+}
   async function logout() {
     try {
       await $fetch("/auth/logout", {
