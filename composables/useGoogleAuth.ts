@@ -6,6 +6,31 @@ export const useGoogleAuth = () => {
   const toast = useToast();
   const loading = ref(false);
 
+  function initGoogleAuth(onSuccess?: () => void) {
+    if (!import.meta.client) return;
+
+    if (!window.google?.accounts?.id) {
+      setTimeout(() => initGoogleAuth(onSuccess), 300);
+      return;
+    }
+
+    window.google.accounts.id.initialize({
+      client_id: config.public.googleClientId as string,
+      callback: (response: any) => handleCredential(response, onSuccess),
+      auto_select: false,
+      cancel_on_tap_outside: true,
+    });
+
+    const el = document.getElementById("google-login-btn");
+    if (!el) return;
+
+    window.google.accounts.id.renderButton(el, {
+      type: "standard",
+      size: "large",
+      width: 445,
+    });
+  }
+
   function initGoogleButton(elementId: string, onSuccess?: () => void) {
     if (!import.meta.client) return;
 
@@ -34,7 +59,7 @@ export const useGoogleAuth = () => {
       width: 445,
     });
   }
-   
+
   async function handleCredential(
     response: { credential: string },
     onSuccess?: () => void,
@@ -46,14 +71,11 @@ export const useGoogleAuth = () => {
         method: "POST",
         body: { credential: response.credential },
         credentials: "include",
-        headers: {
-          "ngrok-skip-browser-warning": "true",
-        },
+        headers: { "ngrok-skip-browser-warning": "true" },
       });
 
       authStore.user = res.data.user;
       await Promise.all([cartStore.fetchCart(), wishlistStore.fetchWishlist()]);
-
       toast.add({ title: "Đăng nhập Google thành công!", color: "success" });
 
       if (onSuccess) onSuccess();
@@ -75,5 +97,10 @@ export const useGoogleAuth = () => {
     }
   }
 
-  return { loading, initGoogleButton, cleanup };
+  return {
+    loading,
+    initGoogleAuth,
+    initGoogleButton,
+    cleanup,
+  };
 };
