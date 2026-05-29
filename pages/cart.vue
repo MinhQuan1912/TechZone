@@ -71,7 +71,7 @@
                      {{ item.product.name }}
                   </NuxtLink>
                   <p class="text-xs text-gray-400 mt-1">
-                     {{ [item.variant?.color, item.variant?.storage, item.variant?.ram, item.variant?.version].filter(Boolean).join(' / ') }}
+                     {{ [item.variant?.color, item.variant?.storage, item.variant?.ram, item.variant?.version, item.variant?.cpu].filter(Boolean).join(' / ') }}
                   </p>
 
                   <UBadge v-if="isInactive(item)" color="warning" variant="soft" size="xs" class="mt-1">
