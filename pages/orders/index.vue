@@ -1,8 +1,32 @@
 <template>
    <div class="max-w-4xl mx-auto px-4 sm:px-6 py-8">
       <h1 class="text-2xl font-bold text-gray-900 mb-6">Đơn hàng của tôi</h1>
-      <div v-if="store.loading" class="space-y-4">
-         <div v-for="i in 3" :key="i" class="animate-pulse bg-white rounded-2xl h-36 border" />
+      <div v-if="store.loading && !store.items.length" class="space-y-4">
+         <div v-for="i in 3" :key="i" class="bg-white rounded-2xl border border-gray-100 overflow-hidden animate-pulse">
+            <div class="flex items-center justify-between px-5 py-4 bg-gray-50 border-b border-gray-100">
+               <div class="flex items-center gap-2">
+                  <div class="h-3 w-28 bg-gray-200 rounded-full" />
+                  <div class="h-5 w-20 bg-gray-200 rounded-full" />
+                  <div class="h-5 w-14 bg-gray-200 rounded-full" />
+               </div>
+               <div class="h-3 w-20 bg-gray-200 rounded-full" />
+            </div>
+            <div class="px-5 py-4">
+               <div class="flex items-center gap-3">
+                  <div v-for="j in 2" :key="j" class="flex items-center gap-2">
+                     <div class="w-10 h-10 bg-gray-200 rounded-lg shrink-0" />
+                     <div class="space-y-1.5">
+                        <div class="h-3 w-20 bg-gray-200 rounded-full" />
+                        <div class="h-2.5 w-8 bg-gray-200 rounded-full" />
+                     </div>
+                  </div>
+               </div>
+            </div>
+            <div class="flex items-center justify-between px-5 py-4 border-t border-gray-100">
+               <div class="h-6 w-32 bg-gray-200 rounded-full" />
+               <div class="h-8 w-20 bg-gray-200 rounded-lg" />
+            </div>
+         </div>
       </div>
       <CommonAppEmpty v-else-if="store.items.length === 0" icon="i-heroicons-shopping-bag" title="Chưa có đơn hàng"
          description="Mua sắm ngay để có đơn hàng đầu tiên" action-label="Mua sắm ngay" action-to="/products" />
