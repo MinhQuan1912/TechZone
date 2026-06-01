@@ -126,10 +126,16 @@ function scrollToBottom() {
    })
 }
 
-function handleToggle() {
+async function handleToggle() {
    chat.toggleChat()
    if (chat.isChatOpen.value && authStore.isAuthenticated && !chat.isConnected.value) {
-      chat.connect()
+      try {
+         await authStore.doRefresh()
+         chat.connect()
+      } catch {
+         await authStore.logout()
+         navigateTo('/sign-in')
+      }
    }
 }
 
