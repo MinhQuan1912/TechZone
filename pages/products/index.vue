@@ -11,7 +11,7 @@
          <aside class="hidden lg:block w-60 shrink-0">
             <UCard>
                <ProductFilter v-model="filterModel" :categories="categories" @reset="doReset"
-                  :brands="store.availableBrands" />
+                  :brands="store.availableBrands" :brands-loading="store.brandsLoading" />
             </UCard>
          </aside>
          <div class="flex-1 min-w-0">
@@ -198,10 +198,22 @@ async function changePage(p: number) {
 }
 
 syncFromQuery()
+
 await Promise.all([
    store.fetchAll(),
-   store.fetchBrands(),
+   store.filter.categoryId
+      ? store.fetchBrands(store.filter.categoryId)
+      : Promise.resolve(),
 ])
+
+watch(() => store.filter.categoryId, (categoryId) => {
+   if (categoryId) {
+      store.fetchBrands(categoryId)
+   } else {
+      store.clearBrands()
+   }
+}) 
+
 watch(() => route.query, () => {
    syncFromQuery()
    store.fetchAll()

@@ -11,6 +11,7 @@ export const useProductStore = defineStore("products", () => {
   const totalPages = ref(0);
   const isFetched = ref(false);
   const availableBrands = ref<string[]>([]);
+  const brandsLoading = ref(false);
   const topSelling = ref<Product[]>([]);
   const newArrivals = ref<Product[]>([]);
   const filter = ref({
@@ -53,14 +54,17 @@ export const useProductStore = defineStore("products", () => {
     }
   }
 
-  async function fetchBrands() {
+  async function fetchBrands(categoryId?: string) {
+    brandsLoading.value = true;
     try {
-      const res = await api<string[]>("/products/brands");
+      const query: Record<string, any> = {};
+      if (categoryId) query.categoryId = categoryId;
+      const res = await api<string[]>("/products/brands", { query });
       availableBrands.value = res;
     } catch {
-      availableBrands.value = [
-        ...new Set(items.value.map((p) => p.brand).filter(Boolean)),
-      ].sort();
+      availableBrands.value = [];
+    } finally {
+      brandsLoading.value = false;
     }
   }
   function resetFilter() {
@@ -76,6 +80,11 @@ export const useProductStore = defineStore("products", () => {
       sortBy: "newest",
     };
     page.value = 1;
+    clearBrands();
+  }
+
+  function clearBrands() {
+    availableBrands.value = [];
   }
 
   async function fetchTopSelling(limit = 10) {
@@ -107,6 +116,7 @@ export const useProductStore = defineStore("products", () => {
     loading,
     isFetched,
     availableBrands,
+    brandsLoading,
     total,
     page,
     limit,
@@ -119,5 +129,6 @@ export const useProductStore = defineStore("products", () => {
     fetchAll,
     fetchBrands,
     resetFilter,
+    clearBrands,
   };
 });
