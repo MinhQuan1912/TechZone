@@ -1,7 +1,6 @@
 <template>
     <div class=" m:container m:mx-auto flex justify-center">
         <div class="pt-10 banner w-full overflow-hidden">
-            <ClientOnly>
                 <swiper :modules="[Pagination, Autoplay, Navigation]" :slides-per-view="1" :loop="true"
                     :pagination="{ clickable: true }" :initial-slide="2"
                     :autoplay="{ delay: 3000, disableOnInteraction: false }">
@@ -12,7 +11,6 @@
                         </NuxtLink>
                     </swiper-slide>
                 </swiper>
-            </ClientOnly>
         </div>
     </div>
     <div class="m:container mx-auto px-4 sm:px-6 py-10">
