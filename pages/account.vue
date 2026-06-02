@@ -6,9 +6,9 @@
             <template #header>
                <div class="flex items-center justify-between">
                   <h3 class="font-semibold">Thông tin cá nhân</h3>
-                  <UButton v-if="editing" size="sm" color="neutral" variant="ghost"
+                  <UButton v-if="!editing" size="sm" color="neutral" variant="ghost"
                      :icon="editing ? 'i-heroicons-x-mark' : 'i-heroicons-pencil'" @click="toggleEdit">
-                     Chỉnh sửa
+                     {{ editing ? 'Hủy' : 'Chỉnh sửa' }}
                   </UButton>
                </div>
             </template>
