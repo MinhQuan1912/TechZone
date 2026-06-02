@@ -1,5 +1,5 @@
 <template>
-    <div class="flex flex-col gap-12 w-full md:w-3/5 xl:w-auto">
+    <div class="flex flex-col gap-12 w-full md:w-3/5 xl:w-full">
         <div class="flex flex-col gap-6 text-black">
             <p class="text-4xl leading-7.5 font-medium">Đăng ký tài khoản</p>
             <p class="leading-6">Nhập thông tin bên dưới</p>
