@@ -63,14 +63,25 @@ function select(item: Item) {
    emit('select', item)
 }
 
-watch(() => props.modelValue, (val) => {
-   if (!val) {
+function syncQueryFromModel() {
+   if (!props.modelValue) {
       query.value = ''
       return
    }
-   const found = props.items.find(i => i.value === val)
-   if (found) query.value = found.label
-})
+
+   const found = props.items.find(i => i.value === props.modelValue)
+   if (found) {
+      query.value = found.label
+   }
+}
+
+watch(
+   () => [props.modelValue, props.items],
+   () => {
+      syncQueryFromModel()
+   },
+   { immediate: true, deep: true }
+)
 
 watch(() => props.items, (items) => {
    if (!props.modelValue) return
