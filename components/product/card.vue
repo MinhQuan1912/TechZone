@@ -71,7 +71,7 @@
                   {{ totalStock > 0 ? `Còn hàng` : 'Hết hàng' }}
                </span>
             </div>
-            <div class="text-sm">Đã bán {{product.variants.reduce((total, variant) => total + variant.sold, 0)}}</div>
+            <div v-if="totalSold > 0" class="text-sm">Đã bán {{ totalSold }}</div>
          </div>
       </div>
    </div>
@@ -87,6 +87,10 @@ const { formatCurrency, discountPercent } = useFormat()
 const mainImageUrl = computed(() =>
    props.product.images?.find(i => i.isMain)?.url ||
    props.product.images?.[0]?.url || null
+)
+
+const totalSold = computed(() =>
+   (props.product.variants || []).reduce((total, variant) => total + (variant.sold || 0), 0)
 )
 
 const totalStock = computed(() =>
