@@ -7,7 +7,7 @@
          </UBadge>
       </h1>
 
-      <div v-if="goingCheckout || (!cartStore.isFetched && cartStore.loading)" class="text-center py-20">
+      <div v-if="!cartStore.isFetched && cartStore.loading" class="text-center py-20">
          <div class="w-10 h-10 border-4 border-primary-500 border-t-transparent rounded-full animate-spin mx-auto" />
       </div>
 
