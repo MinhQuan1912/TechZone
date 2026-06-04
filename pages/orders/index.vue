@@ -32,7 +32,7 @@
          description="Mua sắm ngay để có đơn hàng đầu tiên" action-label="Mua sắm ngay" action-to="/products" />
       <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4">
          <div v-for="order in store.items" :key="order.id"
-            class="bg-white rounded-2xl border border-gray-100 overflow-hidden hover:border-gray-200 transition-colors">
+            class="flex flex-col justify-between bg-white rounded-2xl border border-gray-100 overflow-hidden hover:border-gray-200 transition-colors">
             <div
                class="flex items-center justify-between px-5 py-4 bg-gray-50 border-b border-gray-100 flex-wrap gap-2">
                <div class="flex items-center gap-2 flex-wrap">

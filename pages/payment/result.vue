@@ -31,7 +31,7 @@
                Xem đơn hàng
             </UButton>
 
-            <UButton v-if="!isSuccess" to="/payment/checkout" color="primary" icon="i-heroicons-arrow-path">
+            <UButton v-if="!isSuccess" to="/checkout" color="primary" icon="i-heroicons-arrow-path">
                Thử lại
             </UButton>
 
