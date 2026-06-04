@@ -1,7 +1,7 @@
 <template>
    <div class="max-w-5xl mx-auto px-4 sm:px-6 py-8">
       <h1 class="text-2xl font-bold text-gray-900 mb-6">Thanh toán</h1>
-      <div v-if="cartStore.loading" class="text-center py-20">
+      <div v-if="!pageReady" class="text-center py-20">
          <div class="w-10 h-10 border-4 border-primary-500 border-t-transparent rounded-full animate-spin mx-auto" />
       </div>
       <div v-else-if="checkoutItems.length === 0">
@@ -258,6 +258,7 @@ const { api } = useApi()
 const toast = useToast()
 const { formatCurrency, formatDate } = useFormat()
 
+const pageReady = ref(false)
 const {
    provinces,
    wards,
@@ -464,22 +465,25 @@ async function placeOrder() {
 }
 
 onMounted(async () => {
-   document.addEventListener('mousedown', handleCouponOutsideClick)
+   try {
+      if (import.meta.client) {
+         const saved = sessionStorage.getItem('checkout_item_ids')
+         selectedItemIds.value = saved ? JSON.parse(saved) : []
+      }
 
-   await fetchProvinces()
+      if (!cartStore.isFetched) {
+         await cartStore.fetchCart()
+      }
 
-   if (!cartStore.isFetched) {
-      await cartStore.fetchCart()
+      if (selectedItemIds.value.length === 0) {
+         selectedItemIds.value = cartStore.items.map(i => i.id)
+      }
+
+      await fetchProvinces()
+      await fetchAvailableCoupons()
+   } finally {
+      pageReady.value = true
    }
-
-   if (import.meta.client) {
-      const saved = sessionStorage.getItem('checkout_item_ids')
-      selectedItemIds.value = saved
-         ? JSON.parse(saved)
-         : cartStore.items.map(i => i.id)
-   }
-
-   await fetchAvailableCoupons()
 })
 
 onUnmounted(() => {
