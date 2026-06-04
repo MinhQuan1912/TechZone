@@ -44,7 +44,11 @@ export const useAddress = () => {
   }
 
   function parseAddressString(address: string) {
-    const parts = address.split(", ");
+    const parts = address
+      .split(",")
+      .map((p) => p.trim())
+      .filter(Boolean);
+
     if (parts.length >= 3) {
       return {
         street: parts.slice(0, parts.length - 2).join(", "),
@@ -52,7 +56,20 @@ export const useAddress = () => {
         provinceName: parts[parts.length - 1],
       };
     }
-    return { street: address, wardName: "", provinceName: "" };
+
+    if (parts.length === 2) {
+      return {
+        street: "",
+        wardName: parts[0],
+        provinceName: parts[1],
+      };
+    }
+
+    return {
+      street: parts[0] || "",
+      wardName: "",
+      provinceName: "",
+    };
   }
 
   return {
