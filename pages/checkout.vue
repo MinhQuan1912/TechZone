@@ -479,13 +479,13 @@ onMounted(async () => {
          selectedItemIds.value = cartStore.items.map(i => i.id)
       }
 
-      await fetchProvinces()
+      
       await fetchAvailableCoupons()
    } finally {
       pageReady.value = true
    }
 })
-
+fetchProvinces()
 onUnmounted(() => {
    document.removeEventListener('mousedown', handleCouponOutsideClick)
 })
