@@ -15,14 +15,24 @@ textarea {
 }
 button {
   outline: none;
+  transition: 0.3s ease;
+
   &:hover {
     outline: none;
   }
+
   &:active {
     outline: none;
   }
-  cursor: pointer;
-  transition: 0.3s ease;
+
+  &:not(:disabled):not([aria-disabled="true"]) {
+    cursor: pointer;
+  }
+
+  &:disabled,
+  &[aria-disabled="true"] {
+    cursor: not-allowed;
+  }
 }
 a {
   cursor: pointer;
