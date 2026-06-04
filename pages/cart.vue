@@ -11,7 +11,7 @@
          <div class="w-10 h-10 border-4 border-primary-500 border-t-transparent rounded-full animate-spin mx-auto" />
       </div>
 
-      <CommonAppEmpty v-else-if="!goingCheckout && cartStore.isFetched && cartStore.items.length === 0" icon="i-heroicons-shopping-cart"
+      <CommonAppEmpty v-else-if="!leavingCart && cartStore.isFetched && cartStore.items.length === 0" icon="i-heroicons-shopping-cart"
          title="Giỏ hàng trống" description="Thêm sản phẩm vào giỏ để tiếp tục mua sắm" action-label="Tiếp tục mua sắm"
          action-to="/products" />
 
@@ -159,6 +159,7 @@ const { formatCurrency } = useFormat()
 const selectedIds = ref<number[]>([])
 const selectAll = ref(false)
 const goingCheckout = ref(false)
+const leavingCart = ref(false)
 function isInactive(item: any) {
    return item.variant?.isActive === false
 }
@@ -223,10 +224,11 @@ async function handleUpdateQuantity(item: any, newQty: number) {
 }
 
 async function goCheckout() {
-   if (selectedIds.value.length === 0 || goingCheckout.value) return
+   if (selectedIds.value.length === 0 || leavingCart.value) return
 
    saveCheckoutItems()
    goingCheckout.value = true
+   leavingCart.value = true
 
    try {
       await navigateTo('/checkout')
