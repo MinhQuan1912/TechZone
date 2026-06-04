@@ -7,11 +7,11 @@
          </UBadge>
       </h1>
 
-      <div v-if="!cartStore.isFetched && cartStore.loading" class="text-center py-20">
+      <div v-if="goingCheckout || (!cartStore.isFetched && cartStore.loading)" class="text-center py-20">
          <div class="w-10 h-10 border-4 border-primary-500 border-t-transparent rounded-full animate-spin mx-auto" />
       </div>
 
-      <CommonAppEmpty v-else-if="cartStore.isFetched && cartStore.items.length === 0" icon="i-heroicons-shopping-cart"
+      <CommonAppEmpty v-else-if="!goingCheckout && cartStore.isFetched && cartStore.items.length === 0" icon="i-heroicons-shopping-cart"
          title="Giỏ hàng trống" description="Thêm sản phẩm vào giỏ để tiếp tục mua sắm" action-label="Tiếp tục mua sắm"
          action-to="/products" />
 
@@ -138,8 +138,8 @@
                   </div>
                </div>
                <template #footer>
-                  <UButton color="primary" size="lg" class="w-full font-bold" :disabled="selectedIds.length === 0"
-                     to="/checkout" @click="saveCheckoutItems">
+                  <UButton color="primary" size="lg" class="w-full font-bold" :disabled="selectedIds.length === 0 || goingCheckout"
+                     :loading="goingCheckout" @click="goCheckout">
                      Thanh toán
                   </UButton>
                </template>
@@ -158,7 +158,7 @@ const toast = useToast()
 const { formatCurrency } = useFormat()
 const selectedIds = ref<number[]>([])
 const selectAll = ref(false)
-
+const goingCheckout = ref(false)
 function isInactive(item: any) {
    return item.variant?.isActive === false
 }
@@ -220,6 +220,19 @@ async function handleUpdateQuantity(item: any, newQty: number) {
    }
 
    await cartStore.updateQuantity(item.id, newQty)
+}
+
+async function goCheckout() {
+   if (selectedIds.value.length === 0 || goingCheckout.value) return
+
+   saveCheckoutItems()
+   goingCheckout.value = true
+
+   try {
+      await navigateTo('/checkout')
+   } catch {
+      goingCheckout.value = false
+   }
 }
 
 onMounted(async () => {
