@@ -385,8 +385,12 @@ function removeCoupon() {
    couponInput.value = ''
 }
 
-function handleCouponOutsideClick(e: MouseEvent) {
-   if (!couponContainerRef.value?.contains(e.target as Node)) {
+function handleCouponOutsideClick(e: PointerEvent) {
+   const target = e.target as Node | null
+
+   if (!target) return
+
+   if (couponContainerRef.value && !couponContainerRef.value.contains(target)) {
       couponOpen.value = false
    }
 }
@@ -465,6 +469,8 @@ async function placeOrder() {
 }
 
 onMounted(async () => {
+   document.addEventListener('pointerdown', handleCouponOutsideClick, true)
+
    try {
       if (import.meta.client) {
          const saved = sessionStorage.getItem('checkout_item_ids')
@@ -478,14 +484,14 @@ onMounted(async () => {
       if (selectedItemIds.value.length === 0) {
          selectedItemIds.value = cartStore.items.map(i => i.id)
       }
- 
    } finally {
       pageReady.value = true
    }
+
+   fetchProvinces()
+   fetchAvailableCoupons()
 })
-fetchProvinces()
-fetchAvailableCoupons()
 onUnmounted(() => {
-   document.removeEventListener('mousedown', handleCouponOutsideClick)
+   document.removeEventListener('pointerdown', handleCouponOutsideClick, true)
 })
 </script>
