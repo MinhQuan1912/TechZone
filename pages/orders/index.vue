@@ -42,7 +42,7 @@
                   </UBadge>
                   <UBadge v-if="order.isPaid" color="success" variant="soft" size="sm">
                      <UIcon name="i-heroicons-check" class="w-3 h-3 mr-0.5" />
-                     Đã TT
+                     Đã thanh toán
                   </UBadge>
                   <UBadge :color="order.paymentMethod === 'VNPAY' ? 'primary' : 'neutral'" variant="soft" size="sm">
                      {{ order.paymentMethod }}
