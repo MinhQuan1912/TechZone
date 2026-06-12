@@ -251,13 +251,11 @@ onMounted(() => {
    selectedVersion.value = availableVersions[0] ?? null
 })
 
-watch(
-   selectedVariant,
-   (v) => {
-      emit('update:selected', v)
-      emit('update:variantImageUrl', v?.imageUrl || null)
-      emit('update:selectedColor', v?.color || null)
-   },
-   { immediate: true }
-)
+watch(selectedVariant, v => emit('update:selected', v), { immediate: true })
+
+watch(selectedColor, color => {
+   emit('update:selectedColor', color)
+   const colorData = colors.value.find(c => c.value === color)
+   emit('update:variantImageUrl', colorData?.imageUrl || null)
+})
 </script>
