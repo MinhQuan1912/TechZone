@@ -1,7 +1,7 @@
 <template>
    <div class="space-y-3">
       <div class="relative aspect-square rounded-2xl overflow-hidden bg-gray-50 group">
-         <swiper :modules="modules" :loop="allImages.length > 1" :allow-touch-move="true" :initial-slide="activeIndex"
+         <swiper :modules="modules" :loop="allImages.length > 2" :allow-touch-move="true" :initial-slide="activeIndex"
             class="w-full h-full" @swiper="onSwiper" @slide-change="onSlideChange">
             <swiper-slide v-for="img in allImages" :key="img.url">
                <img :src="img.url" :alt="alt" class="w-full h-full object-cover" />
@@ -77,8 +77,12 @@ function onSlideChange() {
 }
 
 function goTo(index: number) {
-   activeIndex.value = index
-   swiperInstance.value?.slideTo(index)
+   if (!swiperInstance.value) return
+   if (allImages.value.length > 2) {
+      swiperInstance.value.slideToLoop(index)
+   } else {
+      swiperInstance.value.slideTo(index)
+   }
 }
 
 watch(() => props.variantImageUrl, () => {
