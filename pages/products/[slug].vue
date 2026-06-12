@@ -185,7 +185,7 @@ const { data: product, pending } = await useApiFetch<Product>(
 )
 useHead(() => ({
    title: product.value
-      ? `Sản phẩm - ${(product.value as any).name}`
+      ? `${(product.value as any).name}`
       : 'TechZone',
 }))
 const selectedVariant = ref<ProductVariant | null>(null)
