@@ -34,6 +34,11 @@ export default defineNuxtConfig({
           as: "style",
           onload: "this.onload=null;this.rel='stylesheet'",
         },
+        {
+          rel: "icon",
+          type: "image/png",
+          href: "/images/logo.png",
+        },
       ],
       title: "Shop",
       meta: [
