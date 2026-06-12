@@ -25,7 +25,7 @@
             <div class="flex justify-between items-center gap-4 bg-secondary pl-3 xs:pl-5 pr-3 h-9.5 rounded-sm">
               <input v-model="searchQuery" type="text" autocomplete="off"
                 class="text-xs leading-4.5 opacity-50 text-black w-30 md:w-43 md:flex-1 placeholder-transparent md:placeholder-black focus:placeholder-transparent focus:outline-none bg-transparent"
-                placeholder="Bạn muốn mua gì hôm nay?" @input="onInput" @focus="onFocus" />
+                placeholder="Bạn muốn mua gì hôm nay?" @input="onInput" @focus="onFocus"                 @keyup.enter="doSearchNavigate" />
               <icons-search class="w-4 h-4 lg:w-6 lg:h-6 cursor-pointer shrink-0" @click="doSearchNavigate" />
             </div>
             <Transition enter-active-class="transition duration-150 ease-out"
