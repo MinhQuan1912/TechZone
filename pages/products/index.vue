@@ -15,16 +15,6 @@
             </UCard>
          </aside>
          <div class="flex-1 min-w-0">
-            <div class="flex items-center justify-between mb-4 lg:hidden">
-               <UButton color="neutral" variant="outline" size="sm" icon="i-heroicons-funnel"
-                  @click="filterDrawerOpen = true">
-                  Bộ lọc
-                  <UBadge v-if="activeFilterCount > 0" color="primary" size="xs" class="ml-1">
-                     {{ activeFilterCount }}
-                  </UBadge>
-               </UButton>
-               <span class="text-sm text-gray-500">{{ store.total }} kết quả</span>
-            </div>
             <div v-if="activeTags.length > 0" class="flex flex-wrap gap-2 mb-4">
                <UBadge v-for="tag in activeTags" :key="tag.key" color="primary" variant="soft"
                   class="cursor-pointer flex items-center gap-1" @click="removeTag(tag.key)">
@@ -129,7 +119,6 @@ const sortOptions = [
 
 const activeTags = computed(() => {
    const tags: { key: string; label: string }[] = []
-   if (store.filter.search) tags.push({ key: 'search', label: `"${store.filter.search}"` })
    if (store.filter.brand) tags.push({ key: 'brand', label: store.filter.brand })
    if (store.filter.categoryId) {
       const cat = (categories.value as any[]).find(
@@ -148,8 +137,6 @@ const activeTags = computed(() => {
    }
    return tags
 })
-
-const activeFilterCount = computed(() => activeTags.value.length)
 
 const pageTitle = computed(() => {
    if (store.filter.search) return `Kết quả: "${store.filter.search}"`
