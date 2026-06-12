@@ -119,6 +119,7 @@ const sortOptions = [
 
 const activeTags = computed(() => {
    const tags: { key: string; label: string }[] = []
+   if (store.filter.search) tags.push({ key: 'search', label: `"${store.filter.search}"` })
    if (store.filter.brand) tags.push({ key: 'brand', label: store.filter.brand })
    if (store.filter.categoryId) {
       const cat = (categories.value as any[]).find(
