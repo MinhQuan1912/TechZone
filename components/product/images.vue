@@ -78,7 +78,7 @@ function onSlideChange() {
 
 function goTo(index: number) {
    activeIndex.value = index
-   swiperInstance.value?.slideToLoop(index)
+   swiperInstance.value?.slideTo(index)
 }
 
 watch(() => props.variantImageUrl, () => {
