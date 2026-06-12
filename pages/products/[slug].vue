@@ -27,6 +27,11 @@
                {{ (product as any).category?.name }}
             </NuxtLink>
             <UIcon name="i-heroicons-chevron-right" class="w-3.5 h-3.5" />
+            <NuxtLink :to="`/products?brand=${(product as any).brand}`"
+               class="hover:text-gray-600 transition-colors">
+            {{ (product as any).brand }}
+            </NuxtLink>
+            <UIcon name="i-heroicons-chevron-right" class="w-3.5 h-3.5" />
             <span class="text-gray-900 font-medium truncate max-w-48">{{ (product as any).name }}</span>
          </nav>
 
@@ -90,8 +95,8 @@
                         <UButton size="xl" color="neutral" variant="outline" :icon="wishlistStore.isInWishlist((product as any).id)
                            ? 'i-heroicons-heart-solid'
                            : 'i-heroicons-heart'" :class="wishlistStore.isInWishlist((product as any).id)
-                              ? 'text-red-500 border-red-200'
-                              : ''" @click="wishlistStore.toggle((product as any).id)" />
+                        ? 'text-red-500 border-red-200'
+                        : ''" @click="wishlistStore.toggle((product as any).id)" />
                </div>
                <div class="grid grid-cols-2 gap-2 pt-3 border-t border-gray-100">
                   <div v-for="feat in features" :key="feat.text" class="flex items-center gap-2 text-xs text-gray-500">
@@ -105,7 +110,7 @@
          <div class="mt-12">
             <UTabs :items="tabs" class="w-full">
                <template #description>
-                  <div class="py-6 w-full">
+                  <div class="py-6 max-w-3xl">
                      <p v-if="(product as any).description" class="text-gray-700 leading-relaxed whitespace-pre-line">
                         {{ (product as any).description }}
                      </p>

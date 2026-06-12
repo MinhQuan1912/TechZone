@@ -189,6 +189,7 @@ async function doReset() {
    store.resetFilter()
    filterDrawerOpen.value = false
    navigateTo('/products', { replace: true })
+   store.fetchBrands()
 }
 
 async function changePage(p: number) {
@@ -201,18 +202,16 @@ syncFromQuery()
 
 await Promise.all([
    store.fetchAll(),
-   store.filter.categoryId
-      ? store.fetchBrands(store.filter.categoryId)
-      : Promise.resolve(),
+   store.fetchBrands(store.filter.categoryId || undefined),
 ])
 
 watch(() => store.filter.categoryId, (categoryId) => {
    if (categoryId) {
       store.fetchBrands(categoryId)
    } else {
-      store.clearBrands()
+      store.fetchBrands()
    }
-}) 
+})
 
 watch(() => route.query, () => {
    syncFromQuery()
