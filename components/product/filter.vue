@@ -58,9 +58,14 @@
          <template v-else>
             <div class="relative">
                <UInput v-model="brandInput" placeholder="Tìm theo nhãn hàng..." icon="i-heroicons-magnifying-glass"
-                  size="sm" :trailing-icon="brandInput ? 'i-heroicons-x-mark' : undefined" @blur="onInputBlur"
-                  @click:trailing="clearBrandInput" @keyup.enter="commitBrand" @keydown.escape="closeDropdown"
-                  @keydown.down.prevent="moveDown" @keydown.up.prevent="moveUp" />
+                  size="sm" @blur="onInputBlur" @keyup.enter="commitBrand" @keydown.escape="closeDropdown"
+                  @keydown.down.prevent="moveDown" @keydown.up.prevent="moveUp">
+                  <template v-if="brandInput" #trailing>
+                     <button class="flex items-center" @mousedown.prevent="clearBrandInput">
+                        <UIcon name="i-heroicons-x-mark" class="w-4 h-4 text-gray-400 hover:text-gray-600" />
+                     </button>
+                  </template>
+               </UInput>
 
                <Transition enter-active-class="transition-all duration-150 ease-out"
                   enter-from-class="opacity-0 -translate-y-1" leave-active-class="transition-all duration-100 ease-in"
@@ -118,7 +123,7 @@ const emit = defineEmits<{
 const brandInput = ref(props.modelValue.brand || '')
 const showDropdown = ref(false)
 const activeIdx = ref(-1)
-
+const isSelecting = ref(false)
 watch(() => props.modelValue.brand, (val) => {
    brandInput.value = val || ''
 })
@@ -129,14 +134,15 @@ watch(() => props.modelValue.categoryId, () => {
 })
 
 watch(brandInput, (val) => {
+   if (isSelecting.value) return
    activeIdx.value = -1
-
    if (val.trim()) {
       showDropdown.value = true
    } else {
       closeDropdown()
    }
 })
+
 
 const filteredBrands = computed(() => {
    const a = brandInput.value.toLowerCase().trim()
@@ -195,6 +201,7 @@ function moveUp() {
 }
 
 function selectBrand(brand) {
+   isSelecting.value = true
    if (props.modelValue.brand === brand) {
       brandInput.value = ''
       update('brand', '')
@@ -203,6 +210,7 @@ function selectBrand(brand) {
       update('brand', brand)
    }
    closeDropdown()
+   nextTick(() => { isSelecting.value = false })
 }
 
 function commitBrand() {
