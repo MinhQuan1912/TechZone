@@ -47,6 +47,17 @@
             </button>
          </div>
       </div>
+      <div v-if="filteredCpus.length > 0" class="flex gap-4 items-center flex-wrap">
+         <p class="text-lg font-medium text-gray-700">CPU:</p>
+         <div class="flex flex-wrap gap-2">
+            <button v-for="cpu in filteredCpus" :key="cpu"
+               class="px-3 py-1.5 rounded-xl border-2 text-sm font-medium transition-all" :class="selectedCpu === cpu
+                  ? 'border-primary-500 bg-primary-50 text-primary-700'
+                  : 'border-gray-200 text-gray-700 hover:border-gray-400'" @click="selectCpu(cpu)">
+               {{ cpu }}
+            </button>
+         </div>
+      </div>
       <div v-if="filteredRams.length > 0" class="flex gap-4 items-center flex-wrap">
          <p class="text-lg font-medium text-gray-700">RAM:</p>
          <div class="flex flex-wrap gap-2">
@@ -71,7 +82,6 @@
       </div>
    </div>
 </template>
-
 <script setup lang="ts">
 import type { ProductVariant } from '~/types'
 
@@ -86,6 +96,13 @@ const emit = defineEmits<{
 }>()
 
 const { formatCurrency, discountPercent } = useFormat()
+
+const selectedColor = ref<string | null>(null)
+const selectedStorage = ref<string | null>(null)
+const selectedCpu = ref<string | null>(null)
+const selectedRam = ref<string | null>(null)
+const selectedVersion = ref<string | null>(null)
+
 const colors = computed(() => {
    const colorMap = new Map<string, string | null>()
    props.variants.forEach(v => {
@@ -100,15 +117,28 @@ const filteredStorages = computed(() => {
    const variants = selectedColor.value
       ? props.variants.filter(v => v.color === selectedColor.value)
       : props.variants
+
    return [...new Set(variants.map(v => v.storage).filter(Boolean) as string[])]
+})
+
+const filteredCpus = computed(() => {
+   const variants = props.variants.filter(v => {
+      if (selectedColor.value && v.color !== selectedColor.value) return false
+      if (selectedStorage.value && v.storage !== selectedStorage.value) return false
+      return true
+   })
+
+   return [...new Set(variants.map(v => v.cpu).filter(Boolean) as string[])]
 })
 
 const filteredRams = computed(() => {
    const variants = props.variants.filter(v => {
       if (selectedColor.value && v.color !== selectedColor.value) return false
       if (selectedStorage.value && v.storage !== selectedStorage.value) return false
+      if (selectedCpu.value && v.cpu !== selectedCpu.value) return false
       return true
    })
+
    return [...new Set(variants.map(v => v.ram).filter(Boolean) as string[])]
 })
 
@@ -116,139 +146,72 @@ const filteredVersions = computed(() => {
    const variants = props.variants.filter(v => {
       if (selectedColor.value && v.color !== selectedColor.value) return false
       if (selectedStorage.value && v.storage !== selectedStorage.value) return false
+      if (selectedCpu.value && v.cpu !== selectedCpu.value) return false
       if (selectedRam.value && v.ram !== selectedRam.value) return false
       return true
    })
+
    return [...new Set(variants.map(v => v.version).filter(Boolean) as string[])]
 })
 
-const selectedColor = ref<string | null>(null)
-const selectedStorage = ref<string | null>(null)
-const selectedRam = ref<string | null>(null)
-const selectedVersion = ref<string | null>(null)
-
 const selectedVariant = computed(() => {
    return props.variants.find(v => {
-      const colorOk = !colors.value.length || !selectedColor.value || v.color === selectedColor.value
-      const storageOk = !filteredStorages.value.length || !selectedStorage.value || v.storage === selectedStorage.value
-      const ramOk = !filteredRams.value.length || !selectedRam.value || v.ram === selectedRam.value
-      const versionOk = !filteredVersions.value.length || !selectedVersion.value || v.version === selectedVersion.value
-      return colorOk && storageOk && ramOk && versionOk
+      if (selectedColor.value && v.color !== selectedColor.value) return false
+      if (selectedStorage.value && v.storage !== selectedStorage.value) return false
+      if (selectedCpu.value && v.cpu !== selectedCpu.value) return false
+      if (selectedRam.value && v.ram !== selectedRam.value) return false
+      if (selectedVersion.value && v.version !== selectedVersion.value) return false
+      return true
    }) || null
 })
 
 const discount = computed(() => {
    if (!selectedVariant.value) return 0
-   return discountPercent(selectedVariant.value.originalPrice, selectedVariant.value.salePrice)
+   return discountPercent(
+      selectedVariant.value.originalPrice,
+      selectedVariant.value.salePrice
+   )
 })
 
 function selectColor(color: string) {
    selectedColor.value = color
-
-   const availableStorages = [...new Set(
-      props.variants
-         .filter(v => v.color === color)
-         .map(v => v.storage)
-         .filter(Boolean) as string[]
-   )]
-
-   if (selectedStorage.value && !availableStorages.includes(selectedStorage.value)) {
-      selectedStorage.value = availableStorages[0] ?? null
-   } else if (!selectedStorage.value) {
-      selectedStorage.value = availableStorages[0] ?? null
-   }
-
-   resetRamAndVersion()
+   resetCpuRamAndVersion()
 }
 
 function selectStorage(storage: string) {
    selectedStorage.value = storage
-   resetRamAndVersion()
+   resetCpuRamAndVersion()
+}
+
+function selectCpu(cpu: string) {
+   selectedCpu.value = cpu
+
+   const availableRams = filteredRams.value
+   selectedRam.value = availableRams[0] ?? null
+
+   const availableVersions = filteredVersions.value
+   selectedVersion.value = availableVersions[0] ?? null
 }
 
 function selectRam(ram: string) {
    selectedRam.value = ram
-
-   const availableVersions = [...new Set(
-      props.variants
-         .filter(v => {
-            if (selectedColor.value && v.color !== selectedColor.value) return false
-            if (selectedStorage.value && v.storage !== selectedStorage.value) return false
-            if (v.ram !== ram) return false
-            return true
-         })
-         .map(v => v.version)
-         .filter(Boolean) as string[]
-   )]
-   selectedVersion.value = availableVersions[0] ?? null
+   selectedVersion.value = filteredVersions.value[0] ?? null
 }
 
-function resetRamAndVersion() {
-   const availableRams = [...new Set(
-      props.variants
-         .filter(v => {
-            if (selectedColor.value && v.color !== selectedColor.value) return false
-            if (selectedStorage.value && v.storage !== selectedStorage.value) return false
-            return true
-         })
-         .map(v => v.ram)
-         .filter(Boolean) as string[]
-   )]
-   selectedRam.value = availableRams[0] ?? null
-
-   const availableVersions = [...new Set(
-      props.variants
-         .filter(v => {
-            if (selectedColor.value && v.color !== selectedColor.value) return false
-            if (selectedStorage.value && v.storage !== selectedStorage.value) return false
-            if (selectedRam.value && v.ram !== selectedRam.value) return false
-            return true
-         })
-         .map(v => v.version)
-         .filter(Boolean) as string[]
-   )]
-   selectedVersion.value = availableVersions[0] ?? null
+function resetCpuRamAndVersion() {
+   selectedCpu.value = filteredCpus.value[0] ?? null
+   selectedRam.value = filteredRams.value[0] ?? null
+   selectedVersion.value = filteredVersions.value[0] ?? null
 }
 
 onMounted(() => {
    if (!props.variants?.length) return
 
-   const firstColor = colors.value[0]?.value ?? null
-   selectedColor.value = firstColor
-
-
-   const availableStorages = [...new Set(
-      props.variants
-         .filter(v => !firstColor || v.color === firstColor)
-         .map(v => v.storage)
-         .filter(Boolean) as string[]
-   )]
-   selectedStorage.value = availableStorages[0] ?? null
-
-   const availableRams = [...new Set(
-      props.variants
-         .filter(v => {
-            if (firstColor && v.color !== firstColor) return false
-            if (selectedStorage.value && v.storage !== selectedStorage.value) return false
-            return true
-         })
-         .map(v => v.ram)
-         .filter(Boolean) as string[]
-   )]
-   selectedRam.value = availableRams[0] ?? null
-
-   const availableVersions = [...new Set(
-      props.variants
-         .filter(v => {
-            if (firstColor && v.color !== firstColor) return false
-            if (selectedStorage.value && v.storage !== selectedStorage.value) return false
-            if (selectedRam.value && v.ram !== selectedRam.value) return false
-            return true
-         })
-         .map(v => v.version)
-         .filter(Boolean) as string[]
-   )]
-   selectedVersion.value = availableVersions[0] ?? null
+   selectedColor.value = colors.value[0]?.value ?? null
+   selectedStorage.value = filteredStorages.value[0] ?? null
+   selectedCpu.value = filteredCpus.value[0] ?? null
+   selectedRam.value = filteredRams.value[0] ?? null
+   selectedVersion.value = filteredVersions.value[0] ?? null
 })
 
 watch(selectedVariant, v => emit('update:selected', v), { immediate: true })
