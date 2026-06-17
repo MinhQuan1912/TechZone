@@ -32,7 +32,7 @@
             {{ (product as any).brand }}
             </NuxtLink>
             <UIcon name="i-heroicons-chevron-right" class="w-3.5 h-3.5" />
-            <span class="text-gray-900 font-medium truncate max-w-48">{{ (product as any).name }}</span>
+            <span class="text-gray-900 font-medium">{{ (product as any).name }}</span>
          </nav>
 
          <div class="grid md:grid-cols-2 gap-8 lg:gap-12">
