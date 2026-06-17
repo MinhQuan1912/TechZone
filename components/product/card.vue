@@ -12,9 +12,9 @@
             </div>
          </NuxtLink>
 
-         <div v-if="maxDiscountPercent > 0"
+         <div v-if="displayDiscountPercent > 0"
             class="absolute top-2 left-2 bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
-            -{{ maxDiscountPercent }}%
+            -{{ displayDiscountPercent }}%
          </div>
 
          <button
@@ -22,8 +22,11 @@
             @click.prevent="wishlistStore.toggle(product.id)">
             <UIcon :name="wishlistStore.isInWishlist(product.id)
                ? 'i-heroicons-heart-solid'
-               : 'i-heroicons-heart'" class="w-4 h-4 transition-colors"
-               :class="wishlistStore.isInWishlist(product.id) ? 'text-red-500' : 'text-gray-400'" />
+               : 'i-heroicons-heart'
+               " class="w-4 h-4 transition-colors" :class="wishlistStore.isInWishlist(product.id)
+                  ? 'text-red-500'
+                  : 'text-gray-400'
+                  " />
          </button>
       </div>
 
@@ -32,7 +35,9 @@
             <span class="text-xs font-medium text-primary-600 bg-primary-50 px-2 py-0.5 rounded-full">
                {{ product.brand }}
             </span>
-            <span class="text-xs text-gray-400 truncate">{{ product.category?.name }}</span>
+            <span class="text-xs text-gray-400 truncate">
+               {{ product.category?.name }}
+            </span>
          </div>
 
          <NuxtLink :to="`/products/${product.slug}`">
@@ -54,12 +59,13 @@
          <div class="mt-2">
             <div class="flex items-baseline gap-2 flex-wrap">
                <span class="text-lg font-bold text-gray-900">
-                  {{ formatCurrency(product.minSalePrice || 0) }}
+                  {{ formatCurrency(cheapestVariant?.salePrice || 0) }}
                </span>
             </div>
-            <div v-if="minOriginalPrice > (product.minSalePrice || 0)">
+
+            <div v-if="displayOriginalPrice > (cheapestVariant?.salePrice || 0)">
                <span class="text-xs text-gray-400 line-through">
-                  {{ formatCurrency(minOriginalPrice) }}
+                  {{ formatCurrency(displayOriginalPrice) }}
                </span>
             </div>
          </div>
@@ -71,7 +77,10 @@
                   {{ totalStock > 0 ? `Còn hàng` : 'Hết hàng' }}
                </span>
             </div>
-            <div v-if="totalSold > 0" class="text-sm">Đã bán {{ totalSold }}</div>
+
+            <div class="text-sm">
+               Đã bán {{product.variants.reduce((total, variant) => total + variant.sold, 0)}}
+            </div>
          </div>
       </div>
    </div>
@@ -84,28 +93,35 @@ const props = defineProps<{ product: Product }>()
 
 const wishlistStore = useWishlistStore()
 const { formatCurrency, discountPercent } = useFormat()
+
 const mainImageUrl = computed(() =>
    props.product.images?.find(i => i.isMain)?.url ||
-   props.product.images?.[0]?.url || null
-)
-
-const totalSold = computed(() =>
-   (props.product.variants || []).reduce((total, variant) => total + (variant.sold || 0), 0)
+   props.product.images?.[0]?.url ||
+   null
 )
 
 const totalStock = computed(() =>
    (props.product.variants || []).reduce((s, v) => s + v.stock, 0)
 )
 
-const minOriginalPrice = computed(() =>
-   Math.min(...(props.product.variants || []).map(v => v.originalPrice).filter(Boolean))
-)
-
-const maxDiscountPercent = computed(() => {
+const cheapestVariant = computed(() => {
    const variants = props.product.variants || []
-   if (!variants.length) return 0
-   return Math.max(...variants.map(v => discountPercent(v.originalPrice, v.salePrice)))
+   if (!variants.length) return null
+
+   return variants.reduce((min, current) =>
+      current.salePrice < min.salePrice ? current : min
+   )
 })
 
+const displayOriginalPrice = computed(() =>
+   cheapestVariant.value?.originalPrice || 0
+)
 
+const displayDiscountPercent = computed(() => {
+   if (!cheapestVariant.value) return 0
+   return discountPercent(
+      cheapestVariant.value.originalPrice,
+      cheapestVariant.value.salePrice
+   )
+})
 </script>
