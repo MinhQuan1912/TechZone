@@ -78,8 +78,8 @@
                </span>
             </div>
 
-            <div class="text-sm">
-               Đã bán {{product.variants.reduce((total, variant) => total + variant.sold, 0)}}
+            <div v-if="totalSold > 0" class="text-sm">
+               Đã bán {{ totalSold }}
             </div>
          </div>
       </div>
@@ -102,6 +102,10 @@ const mainImageUrl = computed(() =>
 
 const totalStock = computed(() =>
    (props.product.variants || []).reduce((s, v) => s + v.stock, 0)
+)
+
+const totalSold = computed(() =>
+   (props.product.variants || []).reduce((total, variant) => total + variant.sold, 0)
 )
 
 const cheapestVariant = computed(() => {
