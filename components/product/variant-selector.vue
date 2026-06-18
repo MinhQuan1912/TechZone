@@ -175,12 +175,12 @@ const discount = computed(() => {
 
 function selectColor(color: string) {
    selectedColor.value = color
-   resetCpuRamAndVersion()
+   normalizeSelection()
 }
 
 function selectStorage(storage: string) {
    selectedStorage.value = storage
-   resetCpuRamAndVersion()
+   normalizeSelection()
 }
 
 function selectCpu(cpu: string) {
@@ -198,10 +198,38 @@ function selectRam(ram: string) {
    selectedVersion.value = filteredVersions.value[0] ?? null
 }
 
-function resetCpuRamAndVersion() {
-   selectedCpu.value = filteredCpus.value[0] ?? null
-   selectedRam.value = filteredRams.value[0] ?? null
-   selectedVersion.value = filteredVersions.value[0] ?? null
+function normalizeSelection() {
+   const availableStorages = filteredStorages.value
+   if (
+      selectedStorage.value &&
+      !availableStorages.includes(selectedStorage.value)
+   ) {
+      selectedStorage.value = availableStorages[0] ?? null
+   }
+
+   const availableCpus = filteredCpus.value
+   if (
+      selectedCpu.value &&
+      !availableCpus.includes(selectedCpu.value)
+   ) {
+      selectedCpu.value = availableCpus[0] ?? null
+   }
+
+   const availableRams = filteredRams.value
+   if (
+      selectedRam.value &&
+      !availableRams.includes(selectedRam.value)
+   ) {
+      selectedRam.value = availableRams[0] ?? null
+   }
+
+   const availableVersions = filteredVersions.value
+   if (
+      selectedVersion.value &&
+      !availableVersions.includes(selectedVersion.value)
+   ) {
+      selectedVersion.value = availableVersions[0] ?? null
+   }
 }
 
 onMounted(() => {
