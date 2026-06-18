@@ -321,7 +321,7 @@ const form = reactive({
 
 const phoneError = computed(() => {
    const phone = form.recipientPhone.trim()
-   if (!phone) return 'Vui lòng nhập số điện thoại'
+   if (!phone) return ''
    const normalized = phone.replace(/\s+/g, '')
    const phoneRegex = /^0\d{9}$/
    if (!phoneRegex.test(normalized)) {
@@ -414,6 +414,7 @@ const finalAmount = computed(() => Math.max(0, totalAmount.value - discountAmoun
 
 const canOrder = computed(() =>
    form.recipientName.trim() &&
+   form.recipientPhone.trim() &&
    !phoneError.value &&
    !!addressForm.provinceCode &&
    !!addressForm.wardCode &&
