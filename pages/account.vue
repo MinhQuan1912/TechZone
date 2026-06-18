@@ -40,8 +40,8 @@
                   <UInput v-model="editForm.name" class="w-full" />
                </UFormField>
 
-               <UFormField label="Số điện thoại">
-                  <UInput v-model="editForm.phone" type="tel" class="w-full" />
+               <UFormField label="Số điện thoại" :error="phoneError">
+                  <UInput v-model="editForm.phone" type="tel" class="w-full" @input="editForm.phone = editForm.phone.replace(/\D/g, '')" />
                </UFormField>
 
                <UFormField label="Tỉnh / Thành phố">
@@ -63,7 +63,7 @@
 
                <div class="flex justify-end gap-3">
                   <UButton color="neutral" variant="outline" @click="editing = false">Hủy</UButton>
-                  <UButton type="submit" color="primary" :loading="saving">Lưu thay đổi</UButton>
+                  <UButton type="submit" color="primary" :loading="saving" :disabled="!!phoneError">Lưu thay đổi</UButton>
                </div>
             </form>
          </UCard>
@@ -137,6 +137,22 @@ const editForm = reactive({
    phone: authStore.user?.phone || '',
 })
 
+const phoneError = computed(() => {
+   const phone = editForm.phone.trim()
+
+   if (!phone) return ''
+
+   const normalized = phone.replace(/\s+/g, '')
+
+   const phoneRegex = /^0\d{9}$/
+
+   if (!phoneRegex.test(normalized)) {
+      return 'Số điện thoại phải bắt đầu bằng 0 và gồm 10 chữ số'
+   }
+
+   return ''
+})
+
 const addressForm = reactive({
    provinceCode: null as number | null,
    provinceName: '',
@@ -198,6 +214,13 @@ async function toggleEdit() {
 }
 
 async function saveProfile() {
+   if (phoneError.value) {
+      toast.add({
+         title: phoneError.value,
+         color: 'error'
+      })
+      return
+   }
    saving.value = true
    try {
       const address = buildAddressString(

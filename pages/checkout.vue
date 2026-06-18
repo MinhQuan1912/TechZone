@@ -22,8 +22,8 @@
                      <UInput v-model="form.recipientName" class="w-full" placeholder="Nhập họ tên" />
                   </UFormField>
 
-                  <UFormField label="Số điện thoại *">
-                     <UInput v-model="form.recipientPhone" type="tel" class="w-full" placeholder="Nhập số điện thoại" />
+                  <UFormField label="Số điện thoại *" :error="phoneError">
+                     <UInput v-model="form.recipientPhone" type="tel" class="w-full" placeholder="Nhập số điện thoại" @input="form.recipientPhone = form.recipientPhone.replace(/\D/g, '')" />
                   </UFormField>
 
                   <UFormField label="Tỉnh / Thành phố *">
@@ -319,6 +319,16 @@ const form = reactive({
    paymentMethod: 'VNPAY' as 'VNPAY' | 'COD',
 })
 
+const phoneError = computed(() => {
+   const phone = form.recipientPhone.trim()
+   if (!phone) return 'Vui lòng nhập số điện thoại'
+   const normalized = phone.replace(/\s+/g, '')
+   const phoneRegex = /^0\d{9}$/
+   if (!phoneRegex.test(normalized)) {
+      return 'Số điện thoại phải bắt đầu bằng 0 và gồm 10 chữ số'
+   }
+   return ''
+})
 // Coupon
 
 const couponContainerRef = ref<HTMLElement>()
@@ -404,7 +414,7 @@ const finalAmount = computed(() => Math.max(0, totalAmount.value - discountAmoun
 
 const canOrder = computed(() =>
    form.recipientName.trim() &&
-   form.recipientPhone.trim() &&
+   !phoneError.value &&
    !!addressForm.provinceCode &&
    !!addressForm.wardCode &&
    addressForm.street.trim() &&
